@@ -103,7 +103,8 @@
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="Input.BirthDate" class="form-label">Дата рождения</label>
-                                <input asp-for="Input.BirthDate" class="form-control datepicker" type="text" readonly />
+                                <input asp-for="Input.BirthDate" class="form-control datepicker" type="text" readonly 
+                                       data-val="true" data-val-required="Поле Дата рождения обязательно для заполнения" />
                                 <span asp-validation-for="Input.BirthDate" class="text-danger"></span>
                             </div>
                         </div>

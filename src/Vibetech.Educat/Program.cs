@@ -25,6 +25,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Add localization
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
+// Configure culture settings
+var supportedCultures = new[] { "ru-RU" };
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new RequestCulture("ru-RU");
+    options.SupportedCultures = supportedCultures.Select(c => new CultureInfo(c)).ToList();
+    options.SupportedUICultures = options.SupportedCultures;
+});
+
 // Add services to the container.
 builder.Services.AddRazorPages(options =>
 {
@@ -160,6 +169,7 @@ using (var scope = app.Services.CreateScope())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.UseRequestLocalization();
 app.UseRouting();
 
 app.UseAuthentication();

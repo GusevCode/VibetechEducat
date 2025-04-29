@@ -39,6 +39,22 @@ $(function () {
             }
             // Проверка на валидность даты
             var result = false;
+            
+            // Try parsing Russian date format (dd.mm.yyyy)
+            if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(value)) {
+                var parts = value.split('.');
+                var day = parseInt(parts[0], 10);
+                var month = parseInt(parts[1], 10) - 1;
+                var year = parseInt(parts[2], 10);
+                var date = new Date(year, month, day);
+                result = !isNaN(date.getTime()) && 
+                         date.getDate() === day && 
+                         date.getMonth() === month && 
+                         date.getFullYear() === year;
+                return result;
+            }
+            
+            // Try standard date parsing as fallback
             try {
                 var date = new Date(value);
                 result = !isNaN(date.getTime());
