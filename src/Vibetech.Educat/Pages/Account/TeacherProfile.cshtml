@@ -1,0 +1,576 @@
+@page
+@model Vibetech.Educat.Pages.Account.TeacherProfileModel
+@{
+    ViewData["Title"] = "Профиль учителя";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/light.css">
+
+<div class="container-fluid mt-4">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!ModelState.IsValid)
+    {
+        <div class="alert alert-danger mb-4">
+            <div asp-validation-summary="All" class="text-danger"></div>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <div class="text-center mb-4">
+                        <div class="position-relative d-inline-block">
+                            @if (!string.IsNullOrEmpty(Model.PhotoUrl) && Model.PhotoUrl != "/images/default-avatar.jpg")
+                            {
+                                <img src="@Model.PhotoUrl" alt="Profile Photo" class="img-fluid rounded-circle profile-photo" style="width: 180px; height: 180px; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 180px; height: 180px;">
+                                    <i class="bi bi-person-fill" style="font-size: 5rem; color: #6c757d;"></i>
+                                </div>
+                            }
+                            <button type="button" class="btn btn-sm btn-primary position-absolute bottom-0 end-0" data-bs-toggle="modal" data-bs-target="#editPhotoModal">
+                                <i class="bi bi-camera-fill"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <h4>@Model.FullName</h4>
+                    <p class="text-muted">Преподаватель</p>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Статистика</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Рейтинг:</span>
+                        <span class="fw-bold">@Model.Rating <i class="bi bi-star-fill text-warning"></i></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Отзывы:</span>
+                        <span class="fw-bold">@Model.ReviewsCount</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Студенты:</span>
+                        <span class="fw-bold">@Model.StudentsCount</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Проведено уроков:</span>
+                        <span class="fw-bold">@Model.CompletedLessonsCount</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Профиль</h5>
+                    <button class="btn btn-outline-primary btn-sm" id="editProfileButton">
+                        <i class="bi bi-pencil"></i> Редактировать
+                    </button>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="profileForm" asp-page-handler="UpdateProfInfo">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        @Html.AntiForgeryToken()
+                        
+                        <h6 class="mb-3">Основная информация</h6>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Input.FirstName" class="form-label">Имя</label>
+                                <input asp-for="Input.FirstName" class="form-control" readonly />
+                                <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.LastName" class="form-label">Фамилия</label>
+                                <input asp-for="Input.LastName" class="form-control" readonly />
+                                <span asp-validation-for="Input.LastName" class="text-danger"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Input.MiddleName" class="form-label">Отчество</label>
+                                <input asp-for="Input.MiddleName" class="form-control" readonly />
+                                <span asp-validation-for="Input.MiddleName" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.BirthDate" class="form-label">Дата рождения</label>
+                                <input asp-for="Input.BirthDate" class="form-control datepicker" type="text" readonly />
+                                <span asp-validation-for="Input.BirthDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Input.Gender" class="form-label">Пол</label>
+                                <select asp-for="Input.Gender" class="form-select" disabled>
+                                    <option value="Male">Мужской</option>
+                                    <option value="Female">Женский</option>
+                                </select>
+                                <span asp-validation-for="Input.Gender" class="text-danger"></span>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        <h6 class="mb-3">Профессиональная информация</h6>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Input.Education" class="form-label">Образование</label>
+                            <textarea asp-for="Input.Education" class="form-control" rows="3" readonly></textarea>
+                            <span asp-validation-for="Input.Education" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Input.ExperienceYears" class="form-label">Опыт преподавания (лет)</label>
+                                <input asp-for="Input.ExperienceYears" class="form-control" type="number" readonly />
+                                <span asp-validation-for="Input.ExperienceYears" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.HourlyRate" class="form-label">Стоимость занятия (руб/час)</label>
+                                <input asp-for="Input.HourlyRate" class="form-control" type="number" readonly />
+                                <span asp-validation-for="Input.HourlyRate" class="text-danger"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Input.PreparationPrograms" class="form-label">Программы подготовки</label>
+                            <div id="programsList" class="d-flex flex-wrap gap-2 mb-2">
+                                @if (Model.Input.PreparationPrograms != null && Model.Input.PreparationPrograms.Any())
+                                {
+                                    @foreach (var program in Model.Input.PreparationPrograms)
+                                    {
+                                        <div class="badge bg-primary d-flex align-items-center program-badge" data-program="@program">
+                                            <span>@program</span>
+                                            <button type="button" class="btn-close btn-close-white ms-2 delete-program-btn d-none" aria-label="Close"></button>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Не выбрано</span>
+                                }
+                            </div>
+                            <div class="d-none" id="programsEditArea">
+                                <select id="programSelect" class="form-select mb-2">
+                                    @{
+                                        var allPrograms = new[] { "ОГЭ", "ЕГЭ", "ВПР", "Олимпиады", "Школьная программа", "Подготовка к поступлению", "Повышение успеваемости" };
+                                        var selectedPrograms = Model.Input.PreparationPrograms ?? Array.Empty<string>();
+                                        foreach (var program in allPrograms.Except(selectedPrograms))
+                                        {
+                                            <option value="@program">@program</option>
+                                        }
+                                    }
+                                </select>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="addProgramBtn">Добавить программу</button>
+                                
+                                <!-- Hidden inputs for form submission - will be populated by JS -->
+                                <div id="selectedProgramsContainer">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Предметы</label>
+                            <div id="subjectsList" class="d-flex flex-wrap gap-2 mb-2">
+                                @foreach (var subject in Model.Subjects)
+                                {
+                                    <div class="badge bg-primary d-flex align-items-center subject-badge" data-subject-id="@subject.Id">
+                                        <span>@subject.Name</span>
+                                        <button type="button" class="btn-close btn-close-white ms-2 delete-subject-btn d-none" aria-label="Close"></button>
+                                    </div>
+                                }
+                            </div>
+                            <div class="d-none" id="subjectsEditArea">
+                                <select id="subjectSelect" class="form-select mb-2">
+                                    @foreach (var subject in Model.AvailableSubjects)
+                                    {
+                                        <option value="@subject.Id">@subject.Name</option>
+                                    }
+                                </select>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="addSubjectBtn">Добавить предмет</button>
+                            </div>
+                        </div>
+                        
+                        <div class="d-none" id="profileControls">
+                            <button type="submit" class="btn btn-primary">Сохранить</button>
+                            <button type="button" class="btn btn-secondary" id="cancelEditBtn">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для изменения фото -->
+<div class="modal fade" id="editPhotoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Изменение фото</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" enctype="multipart/form-data" asp-page-handler="UpdatePhoto">
+                    <div class="mb-3">
+                        <label class="form-label">Выберите новое фото</label>
+                        <input type="file" class="form-control" name="photo" accept="image/*" id="photoInput" />
+                        <div class="form-text">Максимальный размер файла: 2MB</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="uploadPhotoBtn" disabled>Загрузить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Profile form controls
+            const editProfileButton = document.getElementById('editProfileButton');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
+            const profileControls = document.getElementById('profileControls');
+            
+            const profileInputs = document.querySelectorAll('#profileForm input:not([type="hidden"]), #profileForm select, #profileForm textarea');
+            
+            const subjectsEditArea = document.getElementById('subjectsEditArea');
+            const programsEditArea = document.getElementById('programsEditArea');
+            const deleteSubjectBtns = document.querySelectorAll('.delete-subject-btn');
+            const deleteProgramBtns = document.querySelectorAll('.delete-program-btn');
+            
+            // Function to enter edit mode
+            function enterEditMode() {
+                // Enable form elements
+                profileInputs.forEach(input => {
+                    input.removeAttribute('readonly');
+                    input.removeAttribute('disabled');
+                });
+                profileControls.classList.remove('d-none');
+                
+                // Show edit areas
+                subjectsEditArea.classList.remove('d-none');
+                programsEditArea.classList.remove('d-none');
+                
+                // Hide edit button
+                editProfileButton.classList.add('d-none');
+                
+                // Show delete buttons for subjects
+                deleteSubjectBtns.forEach(btn => {
+                    btn.classList.remove('d-none');
+                });
+                
+                // Show delete buttons for programs
+                deleteProgramBtns.forEach(btn => {
+                    btn.classList.remove('d-none');
+                });
+                
+                // Initialize datepickers after switching to edit mode
+                initDatepickers();
+            }
+            
+            // Function to exit edit mode
+            function exitEditMode() {
+                // Disable form elements
+                profileInputs.forEach(input => {
+                    input.setAttribute('readonly', '');
+                    input.setAttribute('disabled', '');
+                });
+                profileControls.classList.add('d-none');
+                
+                // Hide edit areas
+                subjectsEditArea.classList.add('d-none');
+                programsEditArea.classList.add('d-none');
+                
+                // Show edit button
+                editProfileButton.classList.remove('d-none');
+                
+                // Hide delete buttons for subjects
+                deleteSubjectBtns.forEach(btn => {
+                    btn.classList.add('d-none');
+                });
+                
+                // Hide delete buttons for programs
+                deleteProgramBtns.forEach(btn => {
+                    btn.classList.add('d-none');
+                });
+                
+                // Destroy datepickers when exiting edit mode
+                datepickerInstances.forEach(instance => instance.destroy());
+                datepickerInstances = [];
+            }
+            
+            // Toggle edit mode
+            editProfileButton.addEventListener('click', enterEditMode);
+            cancelEditBtn.addEventListener('click', exitEditMode);
+            
+            // Add subject functionality
+            const addSubjectBtn = document.getElementById('addSubjectBtn');
+            addSubjectBtn.addEventListener('click', function() {
+                const subjectSelect = document.getElementById('subjectSelect');
+                const subjectId = subjectSelect.value;
+                const subjectName = subjectSelect.options[subjectSelect.selectedIndex].text;
+                
+                fetch('/Account/TeacherProfile?handler=AddSubject', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({ subjectId: subjectId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const subjectsArea = document.getElementById('subjectsList');
+                        
+                        // Create badge with delete button
+                        const badge = document.createElement('div');
+                        badge.className = 'badge bg-primary d-flex align-items-center subject-badge';
+                        badge.dataset.subjectId = subjectId;
+                        
+                        const nameSpan = document.createElement('span');
+                        nameSpan.textContent = subjectName;
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'btn-close btn-close-white ms-2 delete-subject-btn';
+                        deleteBtn.setAttribute('aria-label', 'Close');
+                        deleteBtn.addEventListener('click', function() {
+                            deleteSubject(subjectId, badge);
+                        });
+                        
+                        badge.appendChild(nameSpan);
+                        badge.appendChild(deleteBtn);
+                        subjectsArea.appendChild(badge);
+                        
+                        // Remove the option from the dropdown
+                        for (let i = 0; i < subjectSelect.options.length; i++) {
+                            if (subjectSelect.options[i].value === subjectId) {
+                                subjectSelect.remove(i);
+                                break;
+                            }
+                        }
+                    } else {
+                        alert(data.message || 'Произошла ошибка при добавлении предмета');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Произошла ошибка при добавлении предмета');
+                });
+            });
+            
+            // Delete subject functionality
+            function deleteSubject(subjectId, badgeElement) {
+                fetch('/Account/TeacherProfile?handler=DeleteSubject', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({ subjectId: subjectId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the badge from the UI
+                        badgeElement.remove();
+                        
+                        // Get the subject name to add back to the dropdown
+                        const subjectName = badgeElement.querySelector('span').textContent;
+                        
+                        // Add the subject back to the dropdown
+                        const subjectSelect = document.getElementById('subjectSelect');
+                        const option = document.createElement('option');
+                        option.value = subjectId;
+                        option.text = subjectName;
+                        subjectSelect.add(option);
+                    } else {
+                        alert(data.message || 'Произошла ошибка при удалении предмета');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Произошла ошибка при удалении предмета');
+                });
+            }
+            
+            // Initialize delete buttons for existing subjects
+            document.querySelectorAll('.delete-subject-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const badge = btn.closest('.subject-badge');
+                    const subjectId = badge.dataset.subjectId;
+                    deleteSubject(subjectId, badge);
+                });
+            });
+            
+            // Add program functionality
+            const addProgramBtn = document.getElementById('addProgramBtn');
+            if (addProgramBtn) {
+                addProgramBtn.addEventListener('click', function() {
+                    const programSelect = document.getElementById('programSelect');
+                    if (!programSelect || programSelect.options.length === 0) return;
+                    
+                    const programValue = programSelect.value;
+                    const programText = programSelect.options[programSelect.selectedIndex].text;
+                    
+                    // Create new badge
+                    const programsContainer = document.getElementById('programsList');
+                    
+                    // Remove "No items" message if it exists
+                    const noPrograms = programsContainer.querySelector('.text-muted');
+                    if (noPrograms) {
+                        noPrograms.remove();
+                    }
+                    
+                    // Create badge with delete button
+                    const badge = document.createElement('div');
+                    badge.className = 'badge bg-primary d-flex align-items-center program-badge';
+                    badge.dataset.program = programValue;
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = programText;
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn-close btn-close-white ms-2 delete-program-btn';
+                    deleteBtn.setAttribute('aria-label', 'Close');
+                    deleteBtn.addEventListener('click', function() {
+                        deleteProgram(programValue, badge);
+                    });
+                    
+                    badge.appendChild(nameSpan);
+                    badge.appendChild(deleteBtn);
+                    programsContainer.appendChild(badge);
+                    
+                    // Add hidden input
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'Input.PreparationPrograms';
+                    hiddenInput.value = programValue;
+                    document.getElementById('selectedProgramsContainer').appendChild(hiddenInput);
+                    
+                    // Remove from dropdown
+                    for (let i = 0; i < programSelect.options.length; i++) {
+                        if (programSelect.options[i].value === programValue) {
+                            programSelect.remove(i);
+                            break;
+                        }
+                    }
+                });
+            }
+            
+            // Delete program functionality
+            function deleteProgram(programValue, badgeElement) {
+                // Remove badge
+                badgeElement.remove();
+                
+                // Remove hidden input
+                const hiddenInputs = document.querySelectorAll('input[name="Input.PreparationPrograms"]');
+                hiddenInputs.forEach(input => {
+                    if (input.value === programValue) {
+                        input.remove();
+                    }
+                });
+                
+                // Add back to dropdown
+                const programSelect = document.getElementById('programSelect');
+                const option = document.createElement('option');
+                option.value = programValue;
+                option.text = programValue;
+                programSelect.add(option);
+                
+                // Check if we need to show "None selected"
+                const programsContainer = document.getElementById('programsList');
+                if (!programsContainer.querySelector('.program-badge')) {
+                    const noPrograms = document.createElement('span');
+                    noPrograms.className = 'text-muted';
+                    noPrograms.textContent = 'Не выбрано';
+                    programsContainer.appendChild(noPrograms);
+                }
+            }
+            
+            // Initialize delete buttons for existing programs
+            document.querySelectorAll('.delete-program-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const badge = btn.closest('.program-badge');
+                    const programValue = badge.dataset.program;
+                    deleteProgram(programValue, badge);
+                });
+            });
+            
+            // Initialize hidden inputs for preparation programs
+            function initializeHiddenInputs() {
+                const container = document.getElementById('selectedProgramsContainer');
+                container.innerHTML = ''; // Clear container
+                
+                // Get all badges
+                const programBadges = document.querySelectorAll('.program-badge');
+                
+                // Create hidden inputs
+                programBadges.forEach(function(badge) {
+                    const program = badge.dataset.program;
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'Input.PreparationPrograms';
+                    hiddenInput.value = program;
+                    container.appendChild(hiddenInput);
+                });
+            }
+            
+            // Call initialize function
+            initializeHiddenInputs();
+
+            // Initialize Flatpickr for date picker
+            let datepickerInstances = [];
+            
+            function initDatepickers() {
+                // Destroy any existing instances
+                datepickerInstances.forEach(instance => instance.destroy());
+                datepickerInstances = [];
+                
+                // Only initialize datepickers when the form is in edit mode
+                if (!document.getElementById('profileControls').classList.contains('d-none')) {
+                    const dateInputs = document.querySelectorAll('.datepicker');
+                    dateInputs.forEach(input => {
+                        const instance = flatpickr(input, {
+                            dateFormat: "d.m.Y",
+                            locale: "ru",
+                            maxDate: new Date(),
+                            allowInput: true,
+                            disableMobile: true,
+                            position: "auto"
+                        });
+                        datepickerInstances.push(instance);
+                    });
+                }
+            }
+            
+            // Enable/disable photo upload button based on file selection
+            document.getElementById('photoInput')?.addEventListener('change', function() {
+                document.getElementById('uploadPhotoBtn').disabled = !this.files.length;
+            });
+        });
+    </script>
+} 

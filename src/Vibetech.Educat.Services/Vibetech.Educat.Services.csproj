@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Vibetech.Educat.Common\Vibetech.Educat.Common.csproj" />
+      <ProjectReference Include="..\Vibetech.Educat.Domain\Vibetech.Educat.Domain.csproj" />
+    </ItemGroup>
+
+</Project>

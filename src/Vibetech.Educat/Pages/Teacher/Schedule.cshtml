@@ -1,0 +1,561 @@
+@page
+@model Vibetech.Educat.Pages.Teacher.ScheduleModel
+@{
+    ViewData["Title"] = "Расписание занятий";
+}
+
+<div class="container-fluid mt-4">
+    <h2 class="mb-4">Расписание занятий</h2>
+    
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @Model.ErrorMessage
+        </div>
+    }
+    
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5>Календарь занятий</h5>
+                </div>
+                <div>
+                    <button id="prev" class="btn btn-sm btn-outline-secondary me-2">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button id="next" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <h5 id="currentViewTitle" class="mb-0"></h5>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно для быстрого просмотра урока -->
+    <div class="modal fade" id="lessonModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="lessonModalTitle">Детали урока</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="lessonModalBody">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a id="goToLessonBtn" href="#" class="btn btn-primary">Перейти к уроку</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Добавляем токен защиты от CSRF *@
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet" />
+    <style>
+        .fc-event {
+            cursor: pointer;
+            border-radius: 4px;
+            border-width: 2px !important;
+            font-size: 0.9rem !important;
+            margin: 1px 0 !important;
+        }
+        .fc-event:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .fc-event-title {
+            font-weight: 600 !important;
+            padding: 2px !important;
+        }
+        .fc-event-time {
+            font-weight: 500 !important;
+            padding: 2px !important;
+        }
+        
+        /* Стили для разных статусов уроков */
+        .lesson-scheduled {
+            background-color: #4285f4 !important;
+            border-color: #4285f4 !important;
+        }
+        .lesson-in-progress {
+            background-color: #34a853 !important;
+            border-color: #34a853 !important;
+        }
+        .lesson-completed {
+            background-color: #17a2b8 !important;
+            border-color: #17a2b8 !important;
+        }
+        /* Completely override the cancelled lesson style */
+        .lesson-cancelled,
+        .fc-event.lesson-cancelled {
+            background-color: #6c757d !important;
+            border-color: #6c757d !important;
+            text-decoration: line-through !important;
+            opacity: 0.7 !important;
+            color: white !important;
+        }
+        /* Force override any fullcalendar colors */
+        .fc-daygrid-event.lesson-cancelled .fc-event-main,
+        .fc-timegrid-event.lesson-cancelled .fc-event-main {
+            background-color: #6c757d !important;
+        }
+        
+        /* Стили для легенды */
+        .legend-item {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        
+        /* Стили для fc-event-student: */
+        .fc-event-student {
+            font-size: 0.8rem !important;
+            opacity: 0.9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-style: italic;
+            padding: 0 2px !important;
+        }
+        
+        /* Стили для календаря в режиме месяца */
+        .fc-daygrid-day {
+            min-height: 80px !important;
+        }
+        
+        /* Force cells to expand to fit all events */
+        .fc-daygrid-day-frame {
+            min-height: 100% !important;
+            height: auto !important;
+        }
+        
+        /* Force day content to expand */
+        .fc-daygrid-day-events {
+            min-height: 100% !important;
+            height: auto !important;
+            position: static !important;
+        }
+        
+        /* Prevent the "more" link from appearing */
+        .fc-daygrid-more-link {
+            display: none !important;
+        }
+        
+        /* Make sure all events are visible */
+        .fc-daygrid-event-harness {
+            display: block !important;
+            visibility: visible !important;
+            margin-top: 1px !important;
+            margin-bottom: 1px !important;
+        }
+        
+        .fc-daygrid-day-number {
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        
+        .fc-day-today {
+            background-color: rgba(255, 87, 34, 0.05) !important;
+        }
+        
+        /* Fix for modal issues */
+        .modal {
+            z-index: 1060 !important;
+        }
+        .modal-backdrop {
+            z-index: 1059 !important;
+        }
+        
+        /* Force solid background on popovers */
+        .fc-popover {
+            background: #fff !important;
+            border: 1px solid rgba(0,0,0,.2) !important;
+            box-shadow: 0 5px 10px rgba(0,0,0,.2) !important;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ru.js"></script>
+    
+    <!-- jQuery (добавляем, если отсутствует) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendar');
+            const modalEl = document.getElementById('lessonModal');
+            const lessonModal = new bootstrap.Modal(modalEl);
+            
+            // Получение токена защиты от CSRF
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            
+            // Инициализация календаря
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ru',
+                height: window.innerHeight * 0.7, // Set a percentage of viewport height
+                aspectRatio: 1.35, // Wide enough to fit events
+                headerToolbar: false,
+                fixedWeekCount: true, // Always show 6 weeks
+                showNonCurrentDates: false,
+                expandRows: true,
+                dayMaxEventRows: 99999, // A very large number
+                dayMaxEvents: null, // No limit
+                moreLinkText: 'ещё',
+                dayHeaderFormat: { weekday: 'short' },
+                nowIndicator: true,
+                eventTimeFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    meridiem: false
+                },
+                eventMinHeight: 25,
+                eventMaxStack: 100,  // Allow many events to stack
+                events: function(info, successCallback, failureCallback) {
+                    console.log("Fetching events from:", info.startStr, "to:", info.endStr);
+                    
+                    // Определяем правильный диапазон дат на основе текущего представления
+                    let start = info.start;
+                    let end = info.end;
+                    
+                    // Форматируем даты в ISO строки
+                    const startStr = start.toISOString();
+                    const endStr = end.toISOString();
+                    
+                    // Для избежания кэширования добавляем timestamp
+                    const timestamp = new Date().getTime();
+                    
+                    $.ajax({
+                        url: window.location.pathname + "?handler=Events",
+                        type: "GET",
+                        data: {
+                            start: startStr,
+                            end: endStr,
+                            _: timestamp // Параметр для предотвращения кэширования
+                        },
+                        headers: {
+                            "RequestVerificationToken": token
+                        },
+                        dataType: "json",
+                        success: function(data) {
+                            console.log("Received events:", data);
+                            // Преобразуем даты в формат, понятный FullCalendar
+                            const events = data.map(event => ({
+                                ...event,
+                                start: new Date(event.start),
+                                end: new Date(event.end)
+                            }));
+                            successCallback(events);
+                        },
+                        error: function(error) {
+                            console.error("Error fetching events:", error);
+                            failureCallback(error);
+                        }
+                    });
+                },
+                eventClick: function(info) {
+                    const lessonId = info.event.id;
+                    $('#goToLessonBtn').attr('href', '/Teacher/LessonDetails/' + lessonId);
+                    
+                    // Загрузка краткой информации об уроке
+                    $('#lessonModalTitle').text(info.event.title);
+                    $('#lessonModalBody').html(`
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                        </div>
+                    `);
+                    
+                    fetchLessonDetails(lessonId);
+                    
+                    lessonModal.show();
+                },
+                eventContent: function(arg) {
+                    const event = arg.event;
+                    
+                    // Определяем класс в зависимости от статуса урока
+                    let statusClass;
+                    switch (event.extendedProps.status) {
+                        case 'Scheduled': statusClass = 'lesson-scheduled'; break;
+                        case 'InProgress': statusClass = 'lesson-in-progress'; break;
+                        case 'Completed': statusClass = 'lesson-completed'; break;
+                        case 'Cancelled': statusClass = 'lesson-cancelled'; break;
+                        default: statusClass = 'lesson-scheduled';
+                    }
+                    
+                    // Добавляем класс к элементу события
+                    if (arg.el) {
+                        arg.el.classList.add(statusClass);
+                        
+                        // Force style override for cancelled events
+                        if (event.extendedProps.status === 'Cancelled') {
+                            // Apply the gray style directly to ensure it overrides any other styles
+                            arg.el.style.setProperty('background-color', '#6c757d', 'important');
+                            arg.el.style.setProperty('border-color', '#6c757d', 'important');
+                            arg.el.style.setProperty('color', 'white', 'important');
+                            arg.el.style.setProperty('text-decoration', 'line-through', 'important');
+                        }
+                    }
+                    
+                    // Создаем кастомный контент
+                    let html = '';
+                    
+                    // Время
+                    if (arg.timeText) {
+                        html += `<div class="fc-event-time">${arg.timeText}</div>`;
+                    }
+                    
+                    // Название предмета
+                    if (event.extendedProps.status === 'Cancelled') {
+                        html += `<div class="fc-event-title" style="text-decoration: line-through;">${event.title}</div>`;
+                    } else {
+                        html += `<div class="fc-event-title">${event.title}</div>`;
+                    }
+                    
+                    // Имя студента (если есть)
+                    if (event.extendedProps.studentName) {
+                        if (event.extendedProps.status === 'Cancelled') {
+                            html += `<div class="fc-event-student" style="text-decoration: line-through;">${event.extendedProps.studentName}</div>`;
+                        } else {
+                            html += `<div class="fc-event-student">${event.extendedProps.studentName}</div>`;
+                        }
+                    }
+                    
+                    return { html: html };
+                },
+                datesSet: function(info) {
+                    updateCurrentViewTitle();
+                }
+            });
+            
+            calendar.render();
+            updateCurrentViewTitle();
+            
+            // Force calendar to adjust heights after initial render
+            setTimeout(function() {
+                calendar.updateSize();
+                
+                // Add resize handler to adjust calendar height
+                window.addEventListener('resize', function() {
+                    calendar.setOption('height', window.innerHeight * 0.7);
+                });
+                
+                // Process any "more" links to show hidden events
+                const processMoreLinks = function() {
+                    document.querySelectorAll('.fc-more-link').forEach(function(link) {
+                        // Find the parent day cell
+                        const dayEl = link.closest('.fc-daygrid-day');
+                        if (dayEl) {
+                            // Get the day-date
+                            const dateAttr = dayEl.getAttribute('data-date');
+                            if (dateAttr) {
+                                // Click the more link programmatically
+                                link.click();
+                                
+                                // Small delay to let the popover open
+                                setTimeout(function() {
+                                    // Close the popover
+                                    calendar.unselect();
+                                }, 50);
+                            }
+                        }
+                    });
+                };
+                
+                // Initial processing
+                processMoreLinks();
+                
+                // Process when calendar view changes
+                calendar.on('datesSet', processMoreLinks);
+            }, 200);
+            
+            // Обработка кнопок навигации по календарю
+            document.getElementById('prev').addEventListener('click', function() {
+                calendar.prev();
+                updateCurrentViewTitle();
+            });
+            
+            document.getElementById('next').addEventListener('click', function() {
+                calendar.next();
+                updateCurrentViewTitle();
+            });
+            
+            // Add today button functionality
+            const todayBtn = document.createElement('button');
+            todayBtn.className = 'btn btn-sm btn-outline-primary ms-2';
+            todayBtn.innerHTML = 'Сегодня';
+            todayBtn.addEventListener('click', function() {
+                calendar.today();
+                updateCurrentViewTitle();
+            });
+            document.querySelector('.card-header .d-flex div:nth-child(2)').appendChild(todayBtn);
+            
+            // Fix modal flickering issues with FullCalendar
+            // Close any FC popovers when opening modals
+            $(document).on('show.bs.modal', function() {
+                // Close any open FC popovers when opening a modal
+                const openPopovers = document.querySelectorAll('.fc-more-popover');
+                if (openPopovers.length > 0) {
+                    calendar.unselect(); // This will close popovers
+                }
+            });
+            
+            // Ensure the modal backdrop doesn't interfere with other elements
+            $(document).on('shown.bs.modal', function() {
+                $('.modal-backdrop').css('z-index', 1059);
+                $('.modal').css('z-index', 1060);
+            });
+            
+            // Вспомогательные функции
+            function updateCurrentViewTitle() {
+                const startDate = calendar.getDate();
+                const locale = calendar.getOption('locale');
+                
+                const formatterMonth = new Intl.DateTimeFormat(locale, { 
+                    month: 'long', 
+                    year: 'numeric' 
+                });
+                
+                const title = formatterMonth.format(startDate);
+                document.getElementById('currentViewTitle').textContent = title;
+            }
+            
+            function fetchLessonDetails(lessonId) {
+                fetch(`/Teacher/Schedule?handler=LessonSummary&id=${lessonId}`, {
+                    headers: {
+                        'RequestVerificationToken': token
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Обновляем модальное окно с полученными данными
+                        const statusMap = {
+                            'Scheduled': 'Запланировано',
+                            'InProgress': 'В процессе',
+                            'Completed': 'Завершено',
+                            'Cancelled': 'Отменено'
+                        };
+                        
+                        const statusClass = {
+                            'Scheduled': 'primary',
+                            'InProgress': 'success',
+                            'Completed': 'info',
+                            'Cancelled': 'secondary'
+                        };
+                        
+                        const statusBadge = `<span class="badge bg-${statusClass[data.status]}">${statusMap[data.status]}</span>`;
+                        
+                        const startDate = new Date(data.scheduledStart);
+                        const endDate = new Date(data.scheduledEnd);
+                        
+                        const formatDate = (date) => {
+                            return date.toLocaleString('ru', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        };
+                        
+                        let html = `
+                            <div class="mb-3">
+                                <h6>Предмет:</h6>
+                                <p>${data.subjectName} ${statusBadge}</p>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <h6>Начало:</h6>
+                                    <p>${formatDate(startDate)}</p>
+                                </div>
+                                <div class="col-6">
+                                    <h6>Окончание:</h6>
+                                    <p>${formatDate(endDate)}</p>
+                                </div>
+                            </div>
+                        `;
+                        
+                        if (data.studentName) {
+                            html += `
+                                <div class="mb-3">
+                                    <h6>Студент:</h6>
+                                    <p>${data.studentName}</p>
+                                </div>
+                            `;
+                        }
+                        
+                        if (data.attachmentsCount > 0) {
+                            html += `
+                                <div class="mb-3">
+                                    <h6>Материалы:</h6>
+                                    <p>${data.attachmentsCount} файлов</p>
+                                </div>
+                            `;
+                        }
+                        
+                        $('#lessonModalBody').html(html);
+                    })
+                    .catch(error => {
+                        $('#lessonModalBody').html(`
+                            <div class="alert alert-danger">
+                                Не удалось загрузить информацию об уроке. Пожалуйста, попробуйте позже.
+                            </div>
+                        `);
+                        console.error('Error fetching lesson details:', error);
+                    });
+            }
+            
+            // Observe calendar for DOM changes to force display all events
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        // Find and remove any "more" links
+                        document.querySelectorAll('.fc-more-link').forEach(function(link) {
+                            // Get the container that would have the hidden events
+                            const dayEl = link.closest('.fc-daygrid-day');
+                            if (dayEl) {
+                                // Find all hidden events
+                                const hiddenEvents = dayEl.querySelectorAll('.fc-daygrid-event-harness[style*="display: none"]');
+                                hiddenEvents.forEach(function(event) {
+                                    event.style.display = 'block';
+                                });
+                                // Remove the "more" link
+                                link.style.display = 'none';
+                            }
+                        });
+                    }
+                });
+            });
+            
+            // Start observing the calendar for changes
+            observer.observe(document.getElementById('calendar'), {
+                childList: true,
+                subtree: true
+            });
+        });
+    </script>
+}

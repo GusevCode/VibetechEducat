@@ -1,0 +1,227 @@
+@page
+@model Vibetech.Educat.Pages.Teacher.DashboardModel
+@{
+    ViewData["Title"] = "Панель репетитора";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+<div class="container mt-4">
+    <h1 class="mb-4">Ученики</h1>
+
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link @(Model.ActiveTab == "requests" ? "active" : "")" 
+               asp-page="./Dashboard" asp-route-tab="requests">
+               <i class="bi bi-envelope me-1"></i> Заявки учеников
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(Model.ActiveTab == "students" ? "active" : "")" 
+               asp-page="./Dashboard" asp-route-tab="students">
+               <i class="bi bi-people me-1"></i> Ученики
+            </a>
+        </li>
+    </ul>
+
+    @if (Model.ActiveTab == "requests")
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Заявки учеников</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.PendingRequests.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Студент</th>
+                                    <th>Дата заявки</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var request in Model.PendingRequests)
+                                {
+                                    <tr>
+                                        <td>@($"{request.Student.FirstName} {request.Student.LastName}")</td>
+                                        <td>@request.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                        <td>
+                                            <button class="btn btn-success btn-sm" 
+                                                    onclick="acceptRequest(@request.Id)">
+                                                Принять
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" 
+                                                    onclick="rejectRequest(@request.Id)">
+                                                Отклонить
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">Нет новых заявок</p>
+                }
+            </div>
+        </div>
+    }
+    else if (Model.ActiveTab == "students")
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Ученики</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.AcceptedStudents.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ФИО</th>
+                                    <th>Дата принятия</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var student in Model.AcceptedStudents)
+                                {
+                                    <tr>
+                                        <td>@($"{student.Student.LastName} {student.Student.FirstName} {student.Student.MiddleName}")</td>
+                                        <td>
+                                            @(student.UpdatedAt.HasValue ? student.UpdatedAt.Value.ToString("dd.MM.yyyy") : "—")
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-danger btn-sm" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#removeStudentModal" 
+                                                    data-student-id="@student.Id"
+                                                    data-student-name="@($"{student.Student.LastName} {student.Student.FirstName}")">
+                                                <i class="bi bi-person-x"></i> Удалить
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">У вас пока нет учеников. Принимайте заявки на обучение на вкладке "Заявки учеников".</p>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Модальное окно для подтверждения удаления ученика -->
+<div class="modal fade" id="removeStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить ученика <span id="studentName"></span>?</p>
+                <p class="text-danger">Это действие нельзя отменить. Ученик будет удален из вашего списка, и ему придется отправить новую заявку, если захочет снова заниматься с вами.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmRemoveButton">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function acceptRequest(requestId) {
+            try {
+                const response = await fetch(`/Teacher/Dashboard?handler=AcceptRequest&requestId=${requestId}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert('Произошла ошибка при обработке запроса');
+            }
+        }
+
+        async function rejectRequest(requestId) {
+            try {
+                const response = await fetch(`/Teacher/Dashboard?handler=RejectRequest&requestId=${requestId}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert('Произошла ошибка при обработке запроса');
+            }
+        }
+
+        // Обработка модального окна для удаления ученика
+        document.addEventListener('DOMContentLoaded', function() {
+            const removeStudentModal = document.getElementById('removeStudentModal');
+            const studentNameElement = document.getElementById('studentName');
+            const confirmRemoveButton = document.getElementById('confirmRemoveButton');
+            let currentStudentId = null;
+
+            if (removeStudentModal) {
+                removeStudentModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    currentStudentId = button.getAttribute('data-student-id');
+                    const studentName = button.getAttribute('data-student-name');
+                    
+                    studentNameElement.textContent = studentName;
+                });
+
+                confirmRemoveButton.addEventListener('click', async function() {
+                    if (currentStudentId) {
+                        try {
+                            const response = await fetch(`/Teacher/Dashboard?handler=RemoveStudent&studentRelationId=${currentStudentId}`, {
+                                method: 'POST',
+                                headers: {
+                                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                                }
+                            });
+                            
+                            const result = await response.json();
+                            if (result.success) {
+                                location.reload();
+                            } else {
+                                alert(result.message || 'Произошла ошибка при удалении ученика');
+                            }
+                        } catch (error) {
+                            console.error(error);
+                            alert('Произошла ошибка при отправке запроса');
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+} 

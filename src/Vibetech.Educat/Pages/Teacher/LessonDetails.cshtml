@@ -1,0 +1,453 @@
+@page "{id:int}"
+@model Vibetech.Educat.Pages.Teacher.LessonDetailsModel
+@{
+    ViewData["Title"] = "Детали урока";
+    
+    // Function to translate LessonStatus to Russian
+    string TranslateStatus(Vibetech.Educat.Common.Models.LessonStatus status)
+    {
+        return status switch
+        {
+            Vibetech.Educat.Common.Models.LessonStatus.Scheduled => "Запланировано",
+            Vibetech.Educat.Common.Models.LessonStatus.InProgress => "В процессе",
+            Vibetech.Educat.Common.Models.LessonStatus.Completed => "Завершено",
+            Vibetech.Educat.Common.Models.LessonStatus.Cancelled => "Отменено",
+            _ => status.ToString()
+        };
+    }
+    
+    // Function to get CSS class for status
+    string GetStatusClass(Vibetech.Educat.Common.Models.LessonStatus status)
+    {
+        return status switch
+        {
+            Vibetech.Educat.Common.Models.LessonStatus.Scheduled => "bg-primary",
+            Vibetech.Educat.Common.Models.LessonStatus.InProgress => "bg-success",
+            Vibetech.Educat.Common.Models.LessonStatus.Completed => "bg-info",
+            Vibetech.Educat.Common.Models.LessonStatus.Cancelled => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+    
+    // Function to get file icon
+    string GetFileIcon(string contentType)
+    {
+        return contentType switch
+        {
+            var t when t.StartsWith("image/") => "bi-file-image",
+            var t when t.StartsWith("video/") => "bi-file-play",
+            var t when t.StartsWith("audio/") => "bi-file-music",
+            var t when t.StartsWith("application/pdf") => "bi-file-pdf",
+            var t when t.StartsWith("application/msword") => "bi-file-word",
+            var t when t.StartsWith("application/vnd.openxmlformats-officedocument.wordprocessingml.document") => "bi-file-word",
+            var t when t.StartsWith("application/vnd.ms-excel") => "bi-file-excel",
+            var t when t.StartsWith("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") => "bi-file-excel",
+            var t when t.StartsWith("application/vnd.ms-powerpoint") => "bi-file-ppt",
+            var t when t.StartsWith("application/vnd.openxmlformats-officedocument.presentationml.presentation") => "bi-file-ppt",
+            var t when t.StartsWith("text/") => "bi-file-text",
+            _ => "bi-file"
+        };
+    }
+    
+    // Function to format file size
+    string FormatFileSize(string base64String)
+    {
+        double fileSize = (base64String.Length * 3) / 4; // Approximate size in bytes
+        
+        if (fileSize < 1024)
+            return $"{fileSize:F2} B";
+        else if (fileSize < 1024 * 1024)
+            return $"{fileSize / 1024:F2} KB";
+        else if (fileSize < 1024 * 1024 * 1024)
+            return $"{fileSize / (1024 * 1024):F2} MB";
+        else
+            return $"{fileSize / (1024 * 1024 * 1024):F2} GB";
+    }
+}
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/Lessons">Мои уроки</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Детали урока</li>
+        </ol>
+    </nav>
+    
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @Model.ErrorMessage
+        </div>
+    }
+    
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="alert">
+            @Model.SuccessMessage
+        </div>
+    }
+    
+    @if (Model.Lesson == null)
+    {
+        <div class="alert alert-warning" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> Урок не найден
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">@(Model.Lesson.Subject?.Name ?? "Предмет не указан")</h4>
+                        <span class="badge @GetStatusClass(Model.Lesson.Status)">@TranslateStatus(Model.Lesson.Status)</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h5><i class="bi bi-clock"></i> Начало урока</h5>
+                                <p>@Model.Lesson.ScheduledStart.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="bi bi-clock-history"></i> Окончание урока</h5>
+                                <p>@Model.Lesson.ScheduledEnd.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</p>
+                            </div>
+                        </div>
+                        
+                        <h5><i class="bi bi-person"></i> Студент</h5>
+                        <p>@(Model.Lesson.Student != null ? $"{Model.Lesson.Student.LastName} {Model.Lesson.Student.FirstName}" : "Студент не назначен")</p>
+                        
+                        @if (!string.IsNullOrEmpty(Model.Lesson.VideoCallUrl))
+                        {
+                            <h5><i class="bi bi-camera-video"></i> Ссылка на конференцию</h5>
+                            <p>
+                                <a href="@Model.Lesson.VideoCallUrl" target="_blank" class="btn btn-outline-primary">
+                                    <i class="bi bi-box-arrow-up-right"></i> Перейти на конференцию
+                                </a>
+                            </p>
+                        }
+                        
+                        @if (!string.IsNullOrEmpty(Model.Lesson.WhiteboardUrl))
+                        {
+                            <h5><i class="bi bi-easel"></i> Интерактивная доска</h5>
+                            <p>
+                                <a href="@Model.Lesson.WhiteboardUrl" target="_blank" class="btn btn-outline-success">
+                                    <i class="bi bi-box-arrow-up-right"></i> Открыть интерактивную доску
+                                </a>
+                            </p>
+                        }
+                    </div>
+                </div>
+                
+                <!-- Материалы урока (вложения) -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-folder2-open"></i> Материалы урока</h5>
+                        <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUploadForm">
+                            <i class="bi bi-upload"></i> Загрузить
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="collapse mb-3" id="collapseUploadForm">
+                            <div class="card card-body bg-light">
+                                <form method="post" enctype="multipart/form-data" asp-page-handler="UploadAttachment">
+                                    <input type="hidden" name="lessonId" value="@Model.Lesson.Id" />
+                                    <div class="mb-3">
+                                        <label for="UploadedFile" class="form-label">Выберите файл для загрузки</label>
+                                        <input class="form-control" type="file" id="UploadedFile" name="UploadedFile" required>
+                                        <div class="form-text">Максимальный размер файла: 50 МБ</div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-cloud-upload"></i> Загрузить файл
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        @if (!Model.Attachments.Any())
+                        {
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i> Для этого урока пока нет загруженных материалов
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" style="width: 50px"></th>
+                                            <th scope="col">Имя файла</th>
+                                            <th scope="col" style="width: 120px">Размер</th>
+                                            <th scope="col" style="width: 200px">Дата загрузки</th>
+                                            <th scope="col" style="width: 130px">Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var attachment in Model.Attachments.OrderByDescending(a => a.CreatedAt))
+                                        {
+                                            <tr>
+                                                <td class="text-center">
+                                                    <i class="bi @GetFileIcon(attachment.ContentType) fs-4"></i>
+                                                </td>
+                                                <td>@attachment.FileName</td>
+                                                <td>@FormatFileSize(attachment.FileBase64)</td>
+                                                <td>@attachment.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a asp-page-handler="Download" asp-route-id="@Model.Lesson.Id" asp-route-attachmentId="@attachment.Id" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-download"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                                data-bs-toggle="modal" data-bs-target="#deleteAttachmentModal" 
+                                                                data-attachment-id="@attachment.Id" 
+                                                                data-attachment-name="@attachment.FileName">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+                
+                <!-- Кнопки действий -->
+                <div class="d-flex flex-wrap gap-2">
+                    @if (Model.Lesson.Status == Vibetech.Educat.Common.Models.LessonStatus.Scheduled)
+                    {
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelLessonModal">
+                            <i class="bi bi-x-circle"></i> Отменить урок
+                        </button>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editLessonModal">
+                            <i class="bi bi-pencil-square"></i> Редактировать
+                        </button>
+                    }
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <!-- Боковая панель с дополнительной информацией -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Информация</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            <strong>Дата создания:</strong><br>
+                            @Model.Lesson.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                        </p>
+                        
+                        @if (Model.Lesson.Status == Vibetech.Educat.Common.Models.LessonStatus.Scheduled)
+                        {
+                            <p>
+                                <strong>Начнется через:</strong><br>
+                                @{
+                                    var timeUntilStart = Model.Lesson.ScheduledStart - DateTime.UtcNow;
+                                    if (timeUntilStart.TotalMinutes > 0)
+                                    {
+                                        @($"{(int)timeUntilStart.TotalDays} дней, {timeUntilStart.Hours} ч {timeUntilStart.Minutes} мин")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger">Время начала прошло</span>
+                                    }
+                                }
+                            </p>
+                        }
+                        
+                        <p>
+                            <strong>Продолжительность:</strong><br>
+                            @{
+                                var duration = Model.Lesson.ScheduledEnd - Model.Lesson.ScheduledStart;
+                                @($"{(int)duration.TotalHours} ч {duration.Minutes} мин")
+                            }
+                        </p>
+                        
+                        <p>
+                            <strong>Кол-во материалов:</strong><br>
+                            @Model.Attachments.Count файлов
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Модальное окно для отмены урока -->
+        <div class="modal fade" id="cancelLessonModal" tabindex="-1" aria-labelledby="cancelLessonModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="post" asp-page-handler="CancelLesson">
+                        <input type="hidden" name="lessonId" value="@Model.Lesson.Id" />
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="cancelLessonModalLabel">Отмена урока</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Вы уверены, что хотите отменить этот урок?</p>
+                            <p><strong>Предмет:</strong> @(Model.Lesson.Subject?.Name ?? "Предмет не указан")</p>
+                            <p><strong>Дата и время:</strong> @Model.Lesson.ScheduledStart.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</p>
+                            
+                            <div class="form-group mb-3">
+                                <label for="cancellationReason" class="form-label">Причина отмены (необязательно):</label>
+                                <textarea id="cancellationReason" name="cancellationReason" class="form-control" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-danger">Подтвердить отмену</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Модальное окно для удаления вложения -->
+        <div class="modal fade" id="deleteAttachmentModal" tabindex="-1" aria-labelledby="deleteAttachmentModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="post" asp-page-handler="DeleteAttachment">
+                        <input type="hidden" name="lessonId" value="@Model.Lesson.Id" />
+                        <input type="hidden" name="attachmentId" id="attachmentIdToDelete" value="" />
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteAttachmentModalLabel">Удаление файла</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Вы уверены, что хотите удалить файл "<span id="attachmentNameToDelete"></span>"?</p>
+                            <p class="text-danger">Это действие невозможно отменить.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-danger">Удалить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Модальное окно для редактирования урока -->
+        <div class="modal fade" id="editLessonModal" tabindex="-1" aria-labelledby="editLessonModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form method="post" asp-page-handler="EditLesson">
+                        <input type="hidden" name="lessonId" value="@Model.Lesson.Id" />
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editLessonModalLabel">Редактирование урока</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="SubjectId" class="form-label">Предмет</label>
+                                <select id="SubjectId" name="SubjectId" class="form-select" required>
+                                    @if (Model.Subjects != null && Model.Subjects.Any())
+                                    {
+                                        @foreach (var subject in Model.Subjects)
+                                        {
+                                            if (Model.Lesson.SubjectId == subject.Id)
+                                            {
+                                                <option value="@subject.Id" selected>@subject.Name</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@subject.Id">@subject.Name</option>
+                                            }
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="StudentId" class="form-label">Студент</label>
+                                <select id="StudentId" name="StudentId" class="form-select">
+                                    <option value="">Выберите студента (необязательно)</option>
+                                    @if (Model.Students != null && Model.Students.Any())
+                                    {
+                                        @foreach (var student in Model.Students)
+                                        {
+                                            if (Model.Lesson.StudentId == student.Id)
+                                            {
+                                                <option value="@student.Id" selected>@($"{student.LastName} {student.FirstName}")</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@student.Id">@($"{student.LastName} {student.FirstName}")</option>
+                                            }
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="StartTime" class="form-label">Дата и время начала</label>
+                                    <input id="StartTime" name="StartTime" type="datetime-local" 
+                                           class="form-control" value="@Model.Lesson.ScheduledStart.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="EndTime" class="form-label">Дата и время окончания</label>
+                                    <input id="EndTime" name="EndTime" type="datetime-local" 
+                                           class="form-control" value="@Model.Lesson.ScheduledEnd.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" required>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="MeetingLink" class="form-label">Ссылка на конференцию</label>
+                                <input id="MeetingLink" name="MeetingLink" type="url" class="form-control" 
+                                       value="@Model.Lesson.VideoCallUrl" placeholder="https://zoom.us/j/123456789">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="WhiteboardLink" class="form-label">Ссылка на интерактивную доску</label>
+                                <input id="WhiteboardLink" name="WhiteboardLink" type="url" class="form-control" 
+                                       value="@Model.Lesson.WhiteboardUrl" placeholder="https://miro.com/app/board/123456789/">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Validate that end time is after start time
+            $('#editLessonModal form').submit(function(event) {
+                const startTime = new Date($('#StartTime').val());
+                const endTime = new Date($('#EndTime').val());
+                
+                if (endTime <= startTime) {
+                    alert('Время окончания должно быть позже времени начала');
+                    event.preventDefault();
+                }
+            });
+            
+            // Set attachment data for delete modal
+            $('#deleteAttachmentModal').on('show.bs.modal', function (event) {
+                const button = $(event.relatedTarget);
+                const attachmentId = button.data('attachment-id');
+                const attachmentName = button.data('attachment-name');
+                
+                $('#attachmentIdToDelete').val(attachmentId);
+                $('#attachmentNameToDelete').text(attachmentName);
+            });
+            
+            // Show result message if any
+            @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+            {
+                <text>
+                    // SuccessMessage already displayed as an alert
+                </text>
+            }
+        });
+    </script>
+} 

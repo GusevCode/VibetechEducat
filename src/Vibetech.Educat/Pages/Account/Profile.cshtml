@@ -1,0 +1,155 @@
+@page
+@model ProfileModel
+@{
+    ViewData["Title"] = "Профиль";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    @if (!string.IsNullOrEmpty(Model.PhotoUrl))
+                    {
+                        <img src="@Model.PhotoUrl" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Фото профиля" />
+                    }
+                    else
+                    {
+                        <div class="rounded-circle mb-3 bg-light d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; margin: 0 auto;">
+                            <i class="fas fa-user fa-3x text-secondary"></i>
+                        </div>
+                    }
+                    <h4>@Model.FullName</h4>
+                    <p class="text-muted">@(Model.IsTutor ? "Репетитор" : "Ученик")</p>
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editPhotoModal">
+                        Изменить фото
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4>Информация о профиле</h4>
+                        <button class="btn btn-outline-primary" id="editButton">
+                            <i class="fas fa-edit"></i> Редактировать
+                        </button>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" id="profileForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Логин</label>
+                                <input asp-for="Input.Login" class="form-control" readonly />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">ФИО</label>
+                                <input asp-for="Input.FullName" class="form-control" readonly />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Дата рождения</label>
+                                <input asp-for="Input.BirthDate" class="form-control" type="date" readonly />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Пол</label>
+                                <input asp-for="Input.Gender" class="form-control" readonly />
+                            </div>
+                        </div>
+
+                        @if (Model.IsTutor)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Предмет</label>
+                                <input asp-for="Input.Subject" class="form-control" readonly />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Программы подготовки</label>
+                                <div class="form-control" readonly>
+                                    @foreach (var program in Model.PreparationPrograms)
+                                    {
+                                        <span class="badge bg-primary me-1">@program</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Стоимость занятий (руб/час)</label>
+                                    <input asp-for="Input.Price" class="form-control" readonly />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Опыт преподавания (лет)</label>
+                                    <input asp-for="Input.Experience" class="form-control" readonly />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Образование</label>
+                                <textarea asp-for="Input.Education" class="form-control" rows="3" readonly></textarea>
+                            </div>
+                        }
+
+                        <div class="d-none" id="editControls">
+                            <button type="submit" class="btn btn-primary">Сохранить</button>
+                            <button type="button" class="btn btn-secondary" id="cancelEdit">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для изменения фото -->
+<div class="modal fade" id="editPhotoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Изменение фото</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" enctype="multipart/form-data" asp-page-handler="Photo">
+                    <div class="mb-3">
+                        <label class="form-label">Выберите новое фото</label>
+                        <input type="file" class="form-control" name="photo" accept="image/jpeg" id="photoInput" />
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="uploadPhotoBtn" disabled>Загрузить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const editButton = document.getElementById('editButton');
+            const cancelButton = document.getElementById('cancelEdit');
+            const editControls = document.getElementById('editControls');
+            const inputs = document.querySelectorAll('#profileForm input:not([readonly]), #profileForm textarea:not([readonly])');
+
+            editButton.addEventListener('click', function() {
+                inputs.forEach(input => input.removeAttribute('readonly'));
+                editControls.classList.remove('d-none');
+                editButton.classList.add('d-none');
+            });
+
+            cancelButton.addEventListener('click', function() {
+                inputs.forEach(input => input.setAttribute('readonly', ''));
+                editControls.classList.add('d-none');
+                editButton.classList.remove('d-none');
+            });
+
+            // Enable/disable photo upload button based on file selection
+            document.getElementById('photoInput')?.addEventListener('change', function() {
+                document.getElementById('uploadPhotoBtn').disabled = !this.files.length;
+            });
+        });
+    </script>
+} 

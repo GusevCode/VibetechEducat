@@ -1,0 +1,142 @@
+page "{id:int}"
+@model DetailsModel
+@{
+    ViewData["Title"] = Model.Tutor.FullName;
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Основная информация -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <img src="@Model.Tutor.PhotoUrl" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Фото репетитора" />
+                            <div class="rating mb-2">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <i class="fas fa-star @(i <= Model.Tutor.Rating ? "text-warning" : "text-muted")"></i>
+                                }
+                                <span class="ms-1">@Model.Tutor.Rating.ToString("0.0")</span>
+                            </div>
+                            <div class="text-muted">@Model.Tutor.ReviewsCount отзывов</div>
+                        </div>
+                        <div class="col-md-9">
+                            <h2>@Model.Tutor.FullName</h2>
+                            <p class="text-muted mb-3">@Model.Tutor.Subject</p>
+                            <p class="mb-3">@Model.Tutor.Education</p>
+                            <div class="mb-3">
+                                @foreach (var program in Model.Tutor.PreparationPrograms)
+                                {
+                                    <span class="badge bg-primary me-1">@program</span>
+                                }
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="text-muted">Опыт преподавания</div>
+                                    <div>@Model.Tutor.Experience лет</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-muted">Стоимость</div>
+                                    <div>@Model.Tutor.Price ₽/час</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-muted">Место проведения</div>
+                                    <div>@Model.Tutor.Location</div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <h5>О себе</h5>
+                                <p>@Model.Tutor.About</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Отзывы -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h4 class="mb-4">Отзывы</h4>
+                    @foreach (var review in Model.Tutor.Reviews)
+                    {
+                        <div class="border-bottom pb-3 mb-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <div>
+                                    <strong>@review.StudentName</strong>
+                                    <div class="rating">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            <i class="fas fa-star @(i <= review.Rating ? "text-warning" : "text-muted")"></i>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="text-muted">@review.Date.ToString("dd.MM.yyyy")</div>
+                            </div>
+                            <p>@review.Text</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Боковая панель -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h4 class="mb-4">Записаться на занятие</h4>
+                    <form method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Дата</label>
+                            <input type="date" class="form-control" asp-for="Input.Date" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Время</label>
+                            <select class="form-select" asp-for="Input.Time">
+                                @foreach (var time in Model.AvailableTimes)
+                                {
+                                    <option value="@time">@time</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Длительность</label>
+                            <select class="form-select" asp-for="Input.Duration">
+                                <option value="60">1 час</option>
+                                <option value="90">1.5 часа</option>
+                                <option value="120">2 часа</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Формат</label>
+                            <select class="form-select" asp-for="Input.Format">
+                                <option value="Online">Онлайн</option>
+                                <option value="Offline">Очно</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Записаться</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4 class="mb-3">Контакты</h4>
+                    <div class="mb-3">
+                        <i class="fas fa-phone me-2"></i>
+                        <a href="tel:@Model.Tutor.Phone">@Model.Tutor.Phone</a>
+                    </div>
+                    <div class="mb-3">
+                        <i class="fas fa-envelope me-2"></i>
+                        <a href="mailto:@Model.Tutor.Email">@Model.Tutor.Email</a>
+                    </div>
+                    <div>
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        @Model.Tutor.Location
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

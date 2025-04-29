@@ -1,0 +1,304 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Главная";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2 text-center">
+            <h1 class="display-4 mb-4">Добро пожаловать</h1>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                @if (User.IsInRole("Teacher"))
+                {
+                    <p class="lead mb-4">Вам доступны все возможности репетитора</p>
+                    
+                    <!-- Статистика для репетитора в виде диаграмм -->
+                    <div class="row mt-4 mb-5">
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0">Активность учеников</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="studentsChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0">Рейтинг репетитора</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="ratingChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 offset-md-3 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0">Занятия по предметам</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="subjectsChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p class="lead mb-4">Educat - ваш надежный помощник в подготовке к экзаменам</p>
+                    
+                    <!-- Статистика для ученика -->
+                    <div class="row mt-4 mb-5">
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0">Часы занятий</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="studentHoursChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0">Предстоящие занятия</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="upcomingLessonsChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 offset-md-3 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0">Распределение по предметам</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="studentSubjectsChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="lead mb-4">Educat - ваш надежный помощник в подготовке к экзаменам</p>
+            }
+            
+
+            @if (!Model.IsAuthenticated)
+            {
+                <div class="alert alert-info">
+                    <h4 class="alert-heading">Начните обучение прямо сейчас!</h4>
+                    <p>Для доступа ко всем возможностям платформы, пожалуйста, <a href="/Account/Login" class="alert-link">войдите</a> или <a href="/Account/Register" class="alert-link">зарегистрируйтесь</a>.</p>
+                </div>
+                
+                <div class="row mt-5 justify-content-center">
+                    <div class="col-md-5 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Поиск репетиторов</h5>
+                                <p class="card-text">Найдите опытного репетитора по любому предмету</p>
+                                <a href="/Account/Login" class="btn btn-outline-primary">Войдите для поиска</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-5 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Предметы</h5>
+                                <p class="card-text">Ознакомьтесь с доступными предметами для изучения</p>
+                                <a href="/Account/Login" class="btn btn-outline-primary">Войдите для просмотра</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Teacher"))
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // График активности учеников (линейный график)
+                var studentsCtx = document.getElementById('studentsChart').getContext('2d');
+                var studentsChart = new Chart(studentsCtx, {
+                    type: 'line',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.MonthLabels)),
+                        datasets: [{
+                            label: 'Количество учеников',
+                            data: @Html.Raw(Json.Serialize(Model.StudentCountByMonth)),
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+
+                // График рейтинга (donut chart)
+                var ratingCtx = document.getElementById('ratingChart').getContext('2d');
+                var ratingChart = new Chart(ratingCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.RatingLabels)),
+                        datasets: [{
+                            data: @Html.Raw(Json.Serialize(Model.RatingsData)),
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.6)',
+                                'rgba(54, 162, 235, 0.6)',
+                                'rgba(255, 206, 86, 0.6)',
+                                'rgba(255, 159, 64, 0.6)',
+                                'rgba(255, 99, 132, 0.6)'
+                            ],
+                            borderColor: [
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(255, 159, 64, 1)',
+                                'rgba(255, 99, 132, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+
+                // График занятий по предметам (круговая диаграмма)
+                var subjectsCtx = document.getElementById('subjectsChart').getContext('2d');
+                var subjectsChart = new Chart(subjectsCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.SubjectLabels)),
+                        datasets: [{
+                            data: @Html.Raw(Json.Serialize(Model.SubjectData)),
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.6)',
+                                'rgba(54, 162, 235, 0.6)',
+                                'rgba(255, 206, 86, 0.6)',
+                                'rgba(75, 192, 192, 0.6)',
+                                'rgba(153, 102, 255, 0.6)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            });
+        </script>
+    }
+    @if (User.Identity?.IsAuthenticated == true && !User.IsInRole("Teacher"))
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // График часов обучения (столбчатый график)
+                var studentHoursCtx = document.getElementById('studentHoursChart').getContext('2d');
+                var studentHoursChart = new Chart(studentHoursCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.StudentWeekdayLabels)),
+                        datasets: [{
+                            label: 'Часы',
+                            data: @Html.Raw(Json.Serialize(Model.StudentHoursByWeekday)),
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // График предстоящих занятий (горизонтальный график)
+                var upcomingLessonsCtx = document.getElementById('upcomingLessonsChart').getContext('2d');
+                var upcomingLessonsChart = new Chart(upcomingLessonsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.UpcomingDaysLabels)),
+                        datasets: [{
+                            label: 'Количество занятий',
+                            data: @Html.Raw(Json.Serialize(Model.UpcomingLessonsCount)),
+                            backgroundColor: 'rgba(255, 159, 64, 0.6)',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+
+                // График предметов (круговая диаграмма)
+                var studentSubjectsCtx = document.getElementById('studentSubjectsChart').getContext('2d');
+                var studentSubjectsChart = new Chart(studentSubjectsCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.StudentSubjectLabels)),
+                        datasets: [{
+                            data: @Html.Raw(Json.Serialize(Model.StudentSubjectData)),
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.6)',
+                                'rgba(54, 162, 235, 0.6)',
+                                'rgba(255, 206, 86, 0.6)',
+                                'rgba(75, 192, 192, 0.6)',
+                                'rgba(153, 102, 255, 0.6)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            });
+        </script>
+    }
+}

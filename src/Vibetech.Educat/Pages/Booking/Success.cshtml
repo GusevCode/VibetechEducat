@@ -1,0 +1,57 @@
+@page "{tutorId:int}"
+@model SuccessModel
+@{
+    ViewData["Title"] = "Запись успешно создана";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+                    </div>
+                    <h2 class="mb-4">Запись успешно создана!</h2>
+                    <p class="mb-4">Вы записаны на занятие к @Model.TutorName</p>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Детали записи</h5>
+                            <div class="row text-start">
+                                <div class="col-md-6">
+                                    <p><strong>Дата:</strong> @Model.BookingDate.ToString("dd.MM.yyyy")</p>
+                                    <p><strong>Время:</strong> @Model.BookingTime</p>
+                                    <p><strong>Длительность:</strong> @Model.Duration минут</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Формат:</strong> @Model.Format</p>
+                                    <p><strong>Стоимость:</strong> @Model.Price ₽</p>
+                                    <p><strong>Статус:</strong> <span class="badge bg-warning">Ожидает подтверждения</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mb-4">
+                        <h5>Что дальше?</h5>
+                        <ul class="text-start">
+                            <li>Репетитор получит уведомление о вашей записи</li>
+                            <li>После подтверждения записи вы получите уведомление на email</li>
+                            <li>За 24 часа до занятия вы получите напоминание</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/Tutors/@Model.TutorId" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Вернуться к репетитору
+                        </a>
+                        <a href="/Profile/Bookings" class="btn btn-primary">
+                            <i class="fas fa-calendar me-2"></i>Мои записи
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

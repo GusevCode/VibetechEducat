@@ -1,0 +1,307 @@
+@page
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using Vibetech.Educat.Common.Models
+@model Vibetech.Educat.Pages.Search.TutorsModel
+@{
+    ViewData["Title"] = "Поиск репетиторов";
+    
+    // Helper to check if any filters are applied
+    bool HasActiveFilters() => 
+        !string.IsNullOrEmpty(Model.Input.Subject) || 
+        Model.Input.MinPrice.HasValue || 
+        Model.Input.MaxPrice.HasValue || 
+        Model.Input.MinExperience.HasValue;
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Фильтры</h5>
+                        @if (HasActiveFilters())
+                        {
+                            <a href="?sortBy=@Model.SortBy" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-x-circle"></i> Сбросить
+                            </a>
+                        }
+                    </div>
+                    <form method="get">
+                        <div class="mb-3">
+                            <label class="form-label">Предмет</label>
+                            <select asp-for="Input.Subject" class="form-select">
+                                <option value="">Все предметы</option>
+                                @foreach (var subject in Model.AvailableSubjects)
+                                {
+                                    <option value="@subject.Name">@subject.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Минимальная цена</label>
+                            <input asp-for="Input.MinPrice" type="number" class="form-control" min="0" step="100" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Максимальная цена</label>
+                            <input asp-for="Input.MaxPrice" type="number" class="form-control" min="0" step="100" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Минимальный опыт (лет)</label>
+                            <input asp-for="Input.MinExperience" type="number" class="form-control" min="0" />
+                        </div>
+
+                        <!-- Preserve current sort when filtering -->
+                        <input type="hidden" name="sortBy" value="@Model.SortBy" />
+                        
+                        <button type="submit" class="btn btn-primary w-100">Применить фильтры</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Репетиторы</h2>
+                <div class="btn-group">
+                    <a href="?sortBy=rating@(HasActiveFilters() ? $"&Input.Subject={Model.Input.Subject}&Input.MinPrice={Model.Input.MinPrice}&Input.MaxPrice={Model.Input.MaxPrice}&Input.MinExperience={Model.Input.MinExperience}" : "")" 
+                       class="btn btn-outline-primary @(Model.SortBy == "rating" ? "active" : "")">
+                        <i class="bi bi-star-fill"></i> По рейтингу
+                    </a>
+                    <a href="?sortBy=price@(HasActiveFilters() ? $"&Input.Subject={Model.Input.Subject}&Input.MinPrice={Model.Input.MinPrice}&Input.MaxPrice={Model.Input.MaxPrice}&Input.MinExperience={Model.Input.MinExperience}" : "")" 
+                       class="btn btn-outline-primary @(Model.SortBy == "price" ? "active" : "")">
+                        <i class="bi bi-currency-ruble"></i> По цене
+                    </a>
+                    <a href="?sortBy=experience@(HasActiveFilters() ? $"&Input.Subject={Model.Input.Subject}&Input.MinPrice={Model.Input.MinPrice}&Input.MaxPrice={Model.Input.MaxPrice}&Input.MinExperience={Model.Input.MinExperience}" : "")" 
+                       class="btn btn-outline-primary @(Model.SortBy == "experience" ? "active" : "")">
+                        <i class="bi bi-clock-history"></i> По опыту
+                    </a>
+                </div>
+            </div>
+
+            @if (Model.Teachers == null || !Model.Teachers.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>Репетиторы не найдены. Попробуйте изменить параметры поиска.
+                    @if (HasActiveFilters())
+                    {
+                        <div class="mt-2">
+                            <a href="?sortBy=@Model.SortBy" class="btn btn-sm btn-outline-primary">Сбросить все фильтры</a>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="row">
+                    @foreach (var teacher in Model.Teachers)
+                    {
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        @if (!string.IsNullOrEmpty(teacher.PhotoBase64))
+                                        {
+                                            <img src="data:image/jpeg;base64,@teacher.PhotoBase64" class="rounded-circle me-3" style="width: 64px; height: 64px; object-fit: cover;" alt="Фото репетитора" />
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-circle bg-secondary me-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                                                <i class="bi bi-person-fill text-white" style="font-size: 2rem;"></i>
+                                            </div>
+                                        }
+                                        <div>
+                                            <h5 class="card-title mb-1">@teacher.LastName @teacher.FirstName @teacher.MiddleName</h5>
+                                            <p class="text-muted mb-0">
+                                                <i class="bi bi-book me-1"></i>@teacher.Subject
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted">Стоимость:</small>
+                                            <strong>@teacher.HourlyRate ₽/час</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted">Опыт:</small>
+                                            <strong>@teacher.ExperienceYears @(teacher.ExperienceYears == 1 ? "год" : teacher.ExperienceYears is >= 2 and <= 4 ? "года" : "лет")</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Рейтинг:</small>
+                                            <div>
+                                                <i class="bi bi-star-fill text-warning"></i>
+                                                <span>@teacher.Rating.ToString("N1")</span>
+                                                <small class="text-muted">(@teacher.ReviewsCount отзывов)</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Образование -->
+                                    <div class="mb-3">
+                                        <div class="mb-1">
+                                            <small class="text-muted"><i class="bi bi-mortarboard me-1"></i>Образование:</small>
+                                        </div>
+                                        <div>
+                                            <p class="mb-0 small">@teacher.Education</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Программы подготовки -->
+                                    @if (teacher.PreparationPrograms != null && teacher.PreparationPrograms.Any())
+                                    {
+                                        <div class="mb-3">
+                                            <div class="mb-1">
+                                                <small class="text-muted"><i class="bi bi-list-check me-1"></i>Программы подготовки:</small>
+                                            </div>
+                                            <div>
+                                                @foreach (var program in teacher.PreparationPrograms)
+                                                {
+                                                    <span class="badge bg-info text-dark me-1 mb-1">@program</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <!-- Все предметы -->
+                                    @if (teacher.AvailableSubjects != null && teacher.AvailableSubjects.Any())
+                                    {
+                                        <div class="mb-3">
+                                            <div class="mb-1">
+                                                <small class="text-muted"><i class="bi bi-book me-1"></i>Преподает предметы:</small>
+                                            </div>
+                                            <div>
+                                                @foreach (var subject in teacher.AvailableSubjects)
+                                                {
+                                                    <span class="badge bg-primary me-1 mb-1">@subject.Name</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <div class="mt-auto">
+                                        @if (User.Identity?.IsAuthenticated == true)
+                                        {
+                                            @if (teacher.CurrentRequestStatus == RequestStatus.Accepted)
+                                            {
+                                                <button type="button" class="btn btn-success w-100" disabled>
+                                                    <i class="bi bi-check-circle"></i> Вы уже учитесь у этого репетитора
+                                                </button>
+                                            }
+                                            else if (teacher.CurrentRequestStatus == RequestStatus.Rejected)
+                                            {
+                                                <button type="button" class="btn btn-danger w-100" disabled>
+                                                    <i class="bi bi-x-circle"></i> Ваша заявка была отклонена
+                                                </button>
+                                            }
+                                            else if (teacher.HasPendingRequest)
+                                            {
+                                                <button type="button" class="btn btn-warning w-100" disabled>
+                                                    <i class="bi bi-hourglass-split"></i> Заявка на рассмотрении
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <form method="post" asp-page-handler="Request">
+                                                    <input type="hidden" name="teacherProfileId" value="@teacher.Id" />
+                                                    <button type="submit" class="btn btn-primary w-100">
+                                                        <i class="bi bi-send"></i> Отправить заявку
+                                                    </button>
+                                                </form>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <a href="/Account/Login" class="btn btn-outline-primary w-100">
+                                                <i class="bi bi-box-arrow-in-right"></i> Войдите, чтобы отправить заявку
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (Model.TotalPages > 1)
+                {
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <!-- Previous page button -->
+                            <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                                <a class="page-link" href="?page=@(Model.Page - 1)&sortBy=@Model.SortBy&Input.Subject=@Model.Input.Subject&Input.MinPrice=@Model.Input.MinPrice&Input.MaxPrice=@Model.Input.MaxPrice&Input.MinExperience=@Model.Input.MinExperience" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            
+                            @{
+                                int startPage = Math.Max(1, Model.Page - 2);
+                                int endPage = Math.Min(Model.TotalPages, startPage + 4);
+                                
+                                if (endPage - startPage < 4)
+                                {
+                                    startPage = Math.Max(1, endPage - 4);
+                                }
+                            }
+                            
+                            @if (startPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1&sortBy=@Model.SortBy&Input.Subject=@Model.Input.Subject&Input.MinPrice=@Model.Input.MinPrice&Input.MaxPrice=@Model.Input.MaxPrice&Input.MinExperience=@Model.Input.MinExperience">1</a>
+                                </li>
+                                @if (startPage > 2)
+                                {
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                }
+                            }
+                            
+                            @for (int i = startPage; i <= endPage; i++)
+                            {
+                                <li class="page-item @(i == Model.Page ? "active" : "")">
+                                    <a class="page-link" href="?page=@i&sortBy=@Model.SortBy&Input.Subject=@Model.Input.Subject&Input.MinPrice=@Model.Input.MinPrice&Input.MaxPrice=@Model.Input.MaxPrice&Input.MinExperience=@Model.Input.MinExperience">@i</a>
+                                </li>
+                            }
+                            
+                            @if (endPage < Model.TotalPages)
+                            {
+                                @if (endPage < Model.TotalPages - 1)
+                                {
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                }
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=@Model.TotalPages&sortBy=@Model.SortBy&Input.Subject=@Model.Input.Subject&Input.MinPrice=@Model.Input.MinPrice&Input.MaxPrice=@Model.Input.MaxPrice&Input.MinExperience=@Model.Input.MinExperience">@Model.TotalPages</a>
+                                </li>
+                            }
+                            
+                            <!-- Next page button -->
+                            <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                                <a class="page-link" href="?page=@(Model.Page + 1)&sortBy=@Model.SortBy&Input.Subject=@Model.Input.Subject&Input.MinPrice=@Model.Input.MinPrice&Input.MaxPrice=@Model.Input.MaxPrice&Input.MinExperience=@Model.Input.MinExperience" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // No JavaScript needed for now
+    </script>
+}

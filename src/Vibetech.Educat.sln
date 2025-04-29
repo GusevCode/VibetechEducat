@@ -1,0 +1,45 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vibetech.Educat.Domain", "Vibetech.Educat.Domain\Vibetech.Educat.Domain.csproj", "{87654321-4321-4321-4321-432187654321}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vibetech.Educat.DataAccess", "Vibetech.Educat.DataAccess\Vibetech.Educat.DataAccess.csproj", "{98765432-5432-5432-5432-543298765432}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vibetech.Educat.Common", "Vibetech.Educat.Common\Vibetech.Educat.Common.csproj", "{AF3FF524-7C2F-4C29-958F-8200A3FFE69E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vibetech.Educat", "Vibetech.Educat\Vibetech.Educat.csproj", "{2CAB6995-74B8-4DD5-A8C3-DC7195AC7D4F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vibetech.Educat.Services", "Vibetech.Educat.Services\Vibetech.Educat.Services.csproj", "{DE98A433-F036-4709-A54D-8F5EB3881E42}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{87654321-4321-4321-4321-432187654321}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87654321-4321-4321-4321-432187654321}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87654321-4321-4321-4321-432187654321}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87654321-4321-4321-4321-432187654321}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98765432-5432-5432-5432-543298765432}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98765432-5432-5432-5432-543298765432}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98765432-5432-5432-5432-543298765432}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98765432-5432-5432-5432-543298765432}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF3FF524-7C2F-4C29-958F-8200A3FFE69E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF3FF524-7C2F-4C29-958F-8200A3FFE69E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF3FF524-7C2F-4C29-958F-8200A3FFE69E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF3FF524-7C2F-4C29-958F-8200A3FFE69E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CAB6995-74B8-4DD5-A8C3-DC7195AC7D4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CAB6995-74B8-4DD5-A8C3-DC7195AC7D4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CAB6995-74B8-4DD5-A8C3-DC7195AC7D4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CAB6995-74B8-4DD5-A8C3-DC7195AC7D4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE98A433-F036-4709-A54D-8F5EB3881E42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE98A433-F036-4709-A54D-8F5EB3881E42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE98A433-F036-4709-A54D-8F5EB3881E42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE98A433-F036-4709-A54D-8F5EB3881E42}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
