@@ -165,6 +165,25 @@
             margin-bottom: 1px !important;
         }
         
+        /* Ensure events don't overlap and stack properly */
+        .fc-daygrid-event {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            display: block !important;
+            white-space: normal !important;
+        }
+        
+        /* Remove absolute positioning that might cause overlap */
+        .fc-daygrid-event-harness-abs {
+            position: static !important;
+            visibility: visible !important;
+        }
+        
+        /* Fix for events with specific position */
+        .fc .fc-daygrid-body-balanced .fc-daygrid-day-events {
+            position: relative !important;
+        }
+        
         .fc-daygrid-day-number {
             font-weight: bold;
             font-size: 1rem;
@@ -217,8 +236,8 @@
                 fixedWeekCount: true, // Always show 6 weeks
                 showNonCurrentDates: false,
                 expandRows: true,
-                dayMaxEventRows: 99999, // A very large number
-                dayMaxEvents: null, // No limit
+                dayMaxEventRows: 99999, // A very large number - force show all events
+                dayMaxEvents: null, // No limit on events per day
                 moreLinkText: 'ещё',
                 dayHeaderFormat: { weekday: 'short' },
                 nowIndicator: true,
@@ -229,6 +248,8 @@
                 },
                 eventMinHeight: 25,
                 eventMaxStack: 100,  // Allow many events to stack
+                forceEventDuration: true, // Make sure all events have a duration
+                eventDisplay: 'block', // Display events as blocks rather than dots
                 events: function(info, successCallback, failureCallback) {
                     console.log("Fetching events from:", info.startStr, "to:", info.endStr);
                     
@@ -261,9 +282,13 @@
                             const events = data.map(event => ({
                                 ...event,
                                 start: new Date(event.start),
-                                end: new Date(event.end)
+                                end: new Date(event.end),
+                                allDay: false // Force events to not be all-day events
                             }));
                             successCallback(events);
+                            
+                            // Wait for events to be rendered, then ensure they're all visible
+                            setTimeout(makeAllEventsVisible, 100);
                         },
                         error: function(error) {
                             console.error("Error fetching events:", error);
@@ -344,11 +369,23 @@
                 },
                 datesSet: function(info) {
                     updateCurrentViewTitle();
+                    // Ensure all events are visible when the view changes
+                    setTimeout(makeAllEventsVisible, 100);
+                },
+                eventDidMount: function(info) {
+                    // Make sure each event is visible after it's mounted
+                    if (info.el) {
+                        info.el.style.visibility = 'visible';
+                        info.el.style.display = 'block';
+                    }
                 }
             });
             
             calendar.render();
             updateCurrentViewTitle();
+            
+            // Call makeAllEventsVisible after initial render
+            setTimeout(makeAllEventsVisible, 200);
             
             // Force calendar to adjust heights after initial render
             setTimeout(function() {
@@ -556,6 +593,32 @@
                 childList: true,
                 subtree: true
             });
+            
+            // Function to make all events visible
+            function makeAllEventsVisible() {
+                // Remove any "more" links
+                document.querySelectorAll('.fc-more-link').forEach(function(link) {
+                    link.style.display = 'none';
+                });
+                
+                // Show all events that might be hidden
+                document.querySelectorAll('.fc-daygrid-event-harness[style*="display: none"]').forEach(function(event) {
+                    event.style.display = 'block';
+                });
+                
+                // Fix positioning of events
+                document.querySelectorAll('.fc-daygrid-event-harness-abs').forEach(function(event) {
+                    event.classList.remove('fc-daygrid-event-harness-abs');
+                    event.style.position = 'static';
+                    event.style.visibility = 'visible';
+                });
+                
+                // Make sure all events are visible
+                document.querySelectorAll('.fc-event').forEach(function(event) {
+                    event.style.visibility = 'visible';
+                    event.style.display = 'block';
+                });
+            }
         });
     </script>
 }

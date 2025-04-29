@@ -149,8 +149,10 @@ public class DashboardModel : PageModel
                 return new JsonResult(new { success = false, message = "У вас нет прав для удаления этого ученика" });
             }
             
-            // Удаляем связь
-            await _unitOfWork.TeacherStudents.DeleteAsync(relation.Id);
+            // Вместо удаления меняем статус на отклонено и обновляем дату
+            relation.Status = RequestStatus.Rejected;
+            relation.UpdatedAt = DateTime.UtcNow;
+            await _unitOfWork.TeacherStudents.UpdateAsync(relation);
             await _unitOfWork.SaveChangesAsync();
             
             return new JsonResult(new { success = true });

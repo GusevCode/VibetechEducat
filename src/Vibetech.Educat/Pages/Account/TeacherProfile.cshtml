@@ -126,6 +126,14 @@
                                 </select>
                                 <span asp-validation-for="Input.Gender" class="text-danger"></span>
                             </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.ContactInformation" class="form-label">
+                                    <i class="bi bi-chat-fill me-1"></i>Контактная информация
+                                </label>
+                                <textarea asp-for="Input.ContactInformation" class="form-control" rows="2" readonly></textarea>
+                                <div class="form-text">Телефон, Telegram, WhatsApp, VK и т.д.</div>
+                                <span asp-validation-for="Input.ContactInformation" class="text-danger"></span>
+                            </div>
                         </div>
                         
                         <hr class="my-4">

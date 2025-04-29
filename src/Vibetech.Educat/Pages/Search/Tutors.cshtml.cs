@@ -6,6 +6,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Vibetech.Educat.Services.Services.TeacherService;
+using System.ComponentModel.DataAnnotations;
 
 namespace Vibetech.Educat.Pages.Search;
 
@@ -43,8 +44,14 @@ public sealed class TutorsModel : PageModel
     public class SearchInputModel
     {
         public string? Subject { get; set; }
+        
+        [Range(0, double.MaxValue, ErrorMessage = "Цена не может быть отрицательной")]
         public decimal? MinPrice { get; set; }
+        
+        [Range(0, double.MaxValue, ErrorMessage = "Цена не может быть отрицательной")]
         public decimal? MaxPrice { get; set; }
+        
+        [Range(0, int.MaxValue, ErrorMessage = "Опыт не может быть отрицательным")]
         public int? MinExperience { get; set; }
     }
 
@@ -55,6 +62,7 @@ public sealed class TutorsModel : PageModel
         public string LastName { get; set; } = string.Empty;
         public string MiddleName { get; set; } = string.Empty;
         public string? PhotoBase64 { get; set; }
+        public string ContactInformation { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;
         public string[] PreparationPrograms { get; set; } = Array.Empty<string>();
         public decimal HourlyRate { get; set; }
@@ -72,6 +80,20 @@ public sealed class TutorsModel : PageModel
     {
         // Инициализируем Input, если он не был установлен через query string
         Input ??= new SearchInputModel();
+
+        // Валидация цен: если минимальная цена больше максимальной, сбрасываем фильтры цены
+        if (Input.MinPrice.HasValue && Input.MaxPrice.HasValue && Input.MinPrice > Input.MaxPrice)
+        {
+            ModelState.AddModelError("Input.MinPrice", "Минимальная цена должна быть меньше максимальной");
+            ModelState.AddModelError("Input.MaxPrice", "Максимальная цена должна быть больше минимальной");
+            // Сбрасываем некорректные значения
+            var tempInput = new SearchInputModel
+            {
+                Subject = Input.Subject,
+                MinExperience = Input.MinExperience
+            };
+            Input = tempInput;
+        }
 
         // Получаем доступные предметы
         AvailableSubjects = await _teacherService.GetAvailableSubjectsAsync();
@@ -189,6 +211,7 @@ public sealed class TutorsModel : PageModel
             LastName = user?.LastName ?? "Неизвестно",
             MiddleName = user?.MiddleName ?? string.Empty,
             PhotoBase64 = user?.PhotoBase64,
+            ContactInformation = user?.ContactInformation,
             Subject = subjectName,
             PreparationPrograms = teacher.PreparationPrograms,
             HourlyRate = teacher.HourlyRate,

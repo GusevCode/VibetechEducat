@@ -11,10 +11,20 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/light.css">
 
 <div class="container-fluid mt-4">
+    <!-- Success message -->
     @if (TempData["SuccessMessage"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["SuccessMessage"]
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    
+    <!-- Info message (for teacher removal notifications) -->
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>@TempData["InfoMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
@@ -117,6 +127,14 @@
                                     <option value="Female">Женский</option>
                                 </select>
                                 <span asp-validation-for="Input.Gender" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.ContactInformation" class="form-label">
+                                    <i class="bi bi-chat-fill me-1"></i>Контактная информация
+                                </label>
+                                <textarea asp-for="Input.ContactInformation" class="form-control" rows="2" readonly></textarea>
+                                <div class="form-text">Телефон, Telegram, WhatsApp, VK и т.д.</div>
+                                <span asp-validation-for="Input.ContactInformation" class="text-danger"></span>
                             </div>
                         </div>
                         
@@ -232,7 +250,7 @@
             </div>
             <div class="modal-body">
                 <p>Вы уверены, что хотите удалить репетитора <span id="teacherName"></span>?</p>
-                <p class="text-danger">Это действие нельзя отменить. Для возобновления занятий вам придется отправить новую заявку.</p>
+                <p class="text-danger">Это действие нельзя отменить. Вы больше не будете отображаться в списке учеников этого репетитора. Для возобновления занятий вам придется отправить новую заявку.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
@@ -251,7 +269,7 @@
             const editMainInfoButton = document.getElementById('editMainInfoButton');
             const cancelMainInfoEditButton = document.getElementById('cancelMainInfoEdit');
             const mainInfoControls = document.getElementById('mainInfoControls');
-            const mainInfoInputs = document.querySelectorAll('#mainInfoForm input:not([type="hidden"]), #mainInfoForm select');
+            const mainInfoInputs = document.querySelectorAll('#mainInfoForm input:not([type="hidden"]), #mainInfoForm select, #mainInfoForm textarea');
             
             // Initialize Flatpickr for date picker
             let datepickerInstances = [];
@@ -295,7 +313,9 @@
             cancelMainInfoEditButton.addEventListener('click', function() {
                 mainInfoInputs.forEach(input => {
                     input.setAttribute('readonly', '');
-                    input.setAttribute('disabled', '');
+                    if (input.tagName.toLowerCase() === 'select') {
+                        input.setAttribute('disabled', '');
+                    }
                 });
                 mainInfoControls.classList.add('d-none');
                 editMainInfoButton.classList.remove('d-none');

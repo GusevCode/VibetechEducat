@@ -117,6 +117,20 @@
                         <h5><i class="bi bi-person"></i> Преподаватель</h5>
                         <p>@(Model.Lesson.TeacherProfile != null && Model.Lesson.TeacherProfile.User != null ? $"{Model.Lesson.TeacherProfile.User.LastName} {Model.Lesson.TeacherProfile.User.FirstName}" : "Преподаватель не назначен")</p>
                         
+                        @if (Model.Lesson.TeacherProfile != null && Model.Lesson.TeacherProfile.User != null && !string.IsNullOrEmpty(Model.Lesson.TeacherProfile.User.ContactInformation))
+                        {
+                            <h5><i class="bi bi-chat-dots"></i> Контактная информация</h5>
+                            <p>@Model.Lesson.TeacherProfile.User.ContactInformation</p>
+                        }
+                        
+                        @if (Model.TeacherRemoved)
+                        {
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <strong>Внимание!</strong> @Model.TeacherRemovedMessage
+                            </div>
+                        }
+                        
                         @if (!string.IsNullOrEmpty(Model.Lesson.VideoCallUrl))
                         {
                             <h5><i class="bi bi-camera-video"></i> Ссылка на конференцию</h5>

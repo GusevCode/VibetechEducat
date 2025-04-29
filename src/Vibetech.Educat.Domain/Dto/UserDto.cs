@@ -14,5 +14,6 @@ public class UserDto
     public DateTime BirthDate { get; set; }
     public required string Gender { get; set; }
     public string? PhotoUrl { get; set; }
+    public string? ContactInformation { get; set; }
     public required string Role { get; set; } // Student or Teacher
 } 

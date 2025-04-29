@@ -38,7 +38,7 @@
                             <thead>
                                 <tr>
                                     <th>Студент</th>
-                                    <th>Дата заявки</th>
+                                    <th>Контактная информация</th>
                                     <th>Действия</th>
                                 </tr>
                             </thead>
@@ -47,7 +47,16 @@
                                 {
                                     <tr>
                                         <td>@($"{request.Student.FirstName} {request.Student.LastName}")</td>
-                                        <td>@request.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(request.Student.ContactInformation))
+                                            {
+                                                @request.Student.ContactInformation
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Не указано</span>
+                                            }
+                                        </td>
                                         <td>
                                             <button class="btn btn-success btn-sm" 
                                                     onclick="acceptRequest(@request.Id)">
@@ -86,6 +95,7 @@
                                 <tr>
                                     <th>ФИО</th>
                                     <th>Дата принятия</th>
+                                    <th>Контактная информация</th>
                                     <th>Действия</th>
                                 </tr>
                             </thead>
@@ -96,6 +106,16 @@
                                         <td>@($"{student.Student.LastName} {student.Student.FirstName} {student.Student.MiddleName}")</td>
                                         <td>
                                             @(student.UpdatedAt.HasValue ? student.UpdatedAt.Value.ToString("dd.MM.yyyy") : "—")
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(student.Student.ContactInformation))
+                                            {
+                                                @student.Student.ContactInformation
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Не указано</span>
+                                            }
                                         </td>
                                         <td>
                                             <button type="button" class="btn btn-danger btn-sm" 
@@ -131,7 +151,7 @@
             </div>
             <div class="modal-body">
                 <p>Вы уверены, что хотите удалить ученика <span id="studentName"></span>?</p>
-                <p class="text-danger">Это действие нельзя отменить. Ученик будет удален из вашего списка, и ему придется отправить новую заявку, если захочет снова заниматься с вами.</p>
+                <p class="text-danger">Это действие нельзя отменить. Ученик получит уведомление о том, что больше не занимается с вами. Чтобы возобновить занятия, ученику придется отправить новую заявку.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>

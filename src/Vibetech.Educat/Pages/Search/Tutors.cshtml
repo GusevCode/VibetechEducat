@@ -41,12 +41,18 @@
 
                         <div class="mb-3">
                             <label class="form-label">Минимальная цена</label>
-                            <input asp-for="Input.MinPrice" type="number" class="form-control" min="0" step="100" />
+                            <input asp-for="Input.MinPrice" type="number" class="form-control @(ModelState.ContainsKey("Input.MinPrice") ? "is-invalid" : "")" min="0" />
+                            <div class="invalid-feedback" id="minPriceError">
+                                @(ModelState.ContainsKey("Input.MinPrice") ? ModelState["Input.MinPrice"].Errors.FirstOrDefault()?.ErrorMessage : "")
+                            </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Максимальная цена</label>
-                            <input asp-for="Input.MaxPrice" type="number" class="form-control" min="0" step="100" />
+                            <input asp-for="Input.MaxPrice" type="number" class="form-control @(ModelState.ContainsKey("Input.MaxPrice") ? "is-invalid" : "")" min="0" />
+                            <div class="invalid-feedback" id="maxPriceError">
+                                @(ModelState.ContainsKey("Input.MaxPrice") ? ModelState["Input.MaxPrice"].Errors.FirstOrDefault()?.ErrorMessage : "")
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -187,6 +193,18 @@
                                             </div>
                                         </div>
                                     }
+                                    
+                                    @if (!string.IsNullOrEmpty(teacher.ContactInformation))
+                                    {
+                                        <div class="mb-3">
+                                            <div class="mb-1">
+                                                <small class="text-muted"><i class="bi bi-chat-dots me-1"></i>Контактная информация:</small>
+                                            </div>
+                                            <div>
+                                                <p class="mb-0 small">@teacher.ContactInformation</p>
+                                            </div>
+                                        </div>
+                                    }
 
                                     <div class="mt-auto">
                                         @if (User.Identity?.IsAuthenticated == true)
@@ -199,9 +217,12 @@
                                             }
                                             else if (teacher.CurrentRequestStatus == RequestStatus.Rejected)
                                             {
-                                                <button type="button" class="btn btn-danger w-100" disabled>
-                                                    <i class="bi bi-x-circle"></i> Ваша заявка была отклонена
-                                                </button>
+                                                <form method="post" asp-page-handler="Request">
+                                                    <input type="hidden" name="teacherProfileId" value="@teacher.Id" />
+                                                    <button type="submit" class="btn btn-info w-100">
+                                                        <i class="bi bi-arrow-repeat"></i> Подать заявку повторно
+                                                    </button>
+                                                </form>
                                             }
                                             else if (teacher.HasPendingRequest)
                                             {
@@ -302,6 +323,58 @@
 
 @section Scripts {
     <script>
-        // No JavaScript needed for now
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const minPriceInput = document.getElementById('Input_MinPrice');
+            const maxPriceInput = document.getElementById('Input_MaxPrice');
+            const minPriceError = document.getElementById('minPriceError');
+            const maxPriceError = document.getElementById('maxPriceError');
+            
+            form.addEventListener('submit', function(e) {
+                let isValid = true;
+                
+                // Reset validation
+                minPriceInput.classList.remove('is-invalid');
+                maxPriceInput.classList.remove('is-invalid');
+                minPriceError.textContent = '';
+                maxPriceError.textContent = '';
+                
+                // Get price values
+                const minPrice = minPriceInput.value !== '' ? parseFloat(minPriceInput.value) : null;
+                const maxPrice = maxPriceInput.value !== '' ? parseFloat(maxPriceInput.value) : null;
+                
+                // Validate min < max when both are filled
+                if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
+                    minPriceInput.classList.add('is-invalid');
+                    maxPriceInput.classList.add('is-invalid');
+                    maxPriceError.textContent = 'Максимальная цена должна быть больше минимальной';
+                    isValid = false;
+                }
+                
+                if (!isValid) {
+                    e.preventDefault();
+                }
+            });
+            
+            // Live validation when input changes
+            function validatePrices() {
+                const minPrice = minPriceInput.value !== '' ? parseFloat(minPriceInput.value) : null;
+                const maxPrice = maxPriceInput.value !== '' ? parseFloat(maxPriceInput.value) : null;
+                
+                minPriceInput.classList.remove('is-invalid');
+                maxPriceInput.classList.remove('is-invalid');
+                minPriceError.textContent = '';
+                maxPriceError.textContent = '';
+                
+                if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
+                    minPriceInput.classList.add('is-invalid');
+                    maxPriceInput.classList.add('is-invalid');
+                    maxPriceError.textContent = 'Максимальная цена должна быть больше минимальной';
+                }
+            }
+            
+            minPriceInput.addEventListener('input', validatePrices);
+            maxPriceInput.addEventListener('input', validatePrices);
+        });
     </script>
 }

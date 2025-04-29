@@ -25,6 +25,9 @@ public class User : IdentityUser<int>
     [MaxLength(300 * 1024)] // 300 KB
     public string? PhotoBase64 { get; set; }
 
+    [StringLength(1000)]
+    public string? ContactInformation { get; set; }
+
     [Required]
     public string Role { get; set; } = "Student"; // "Student" или "Teacher"
 

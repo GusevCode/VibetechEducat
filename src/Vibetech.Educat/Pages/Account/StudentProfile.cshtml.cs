@@ -56,6 +56,10 @@ public class StudentProfileModel : PageModel
 
         [Display(Name = "Телефон")]
         public string Phone { get; set; } = string.Empty;
+        
+        [Display(Name = "Контактная информация")]
+        [StringLength(1000, ErrorMessage = "Максимальная длина — 1000 символов")]
+        public string? ContactInformation { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -75,6 +79,16 @@ public class StudentProfileModel : PageModel
                 return RedirectToPage("/Account/Login");
             }
 
+            // Check for recently removed teacher relationships (last 24 hours)
+            var recentRemovals = await CheckForRemovedTeacherRelationships(userId);
+            if (recentRemovals.Any())
+            {
+                foreach (var teacherName in recentRemovals)
+                {
+                    TempData["InfoMessage"] = $"Репетитор {teacherName} удалил вас из списка своих учеников. Чтобы возобновить занятия, вам необходимо отправить новую заявку.";
+                }
+            }
+
             // Populate input model
             Input.FirstName = user.FirstName;
             Input.LastName = user.LastName;
@@ -82,6 +96,7 @@ public class StudentProfileModel : PageModel
             Input.BirthDate = user.BirthDate;
             Input.Gender = user.Gender != null ? user.Gender : string.Empty;
             Input.Phone = user.PhoneNumber;
+            Input.ContactInformation = user.ContactInformation;
 
             // Set view data
             PhotoUrl = !string.IsNullOrEmpty(user.PhotoBase64) 
@@ -203,6 +218,7 @@ public class StudentProfileModel : PageModel
             }
             
             user.Gender = Input.Gender;
+            user.ContactInformation = Input.ContactInformation;
             user.UpdatedAt = DateTime.UtcNow;
 
             await _unitOfWork.Users.UpdateAsync(user);
@@ -301,5 +317,43 @@ public class StudentProfileModel : PageModel
             _logger.LogError(ex, "Ошибка при удалении репетитора");
             return new JsonResult(new { success = false, message = $"Ошибка при удалении репетитора: {ex.Message}" });
         }
+    }
+
+    // Helper method to check for recently removed teacher relationships
+    private async Task<List<string>> CheckForRemovedTeacherRelationships(int studentId)
+    {
+        var removedTeachers = new List<string>();
+        
+        try
+        {
+            // Get teacher-student relationships that were updated in the last 24 hours and are now in Rejected status
+            var yesterday = DateTime.UtcNow.AddDays(-1);
+            var recentRemovals = await _unitOfWork.TeacherStudents.FindAsync(
+                ts => ts.StudentId == studentId && 
+                      ts.Status == RequestStatus.Rejected &&
+                      ts.UpdatedAt.HasValue && 
+                      ts.UpdatedAt > yesterday);
+                      
+            // Get teacher names for display
+            foreach (var removal in recentRemovals)
+            {
+                // Load teacher profile and user info
+                var teacherProfile = await _unitOfWork.TeacherProfiles.GetByIdAsync(removal.TeacherProfileId);
+                if (teacherProfile != null)
+                {
+                    var teacher = await _unitOfWork.Users.GetByIdAsync(teacherProfile.UserId);
+                    if (teacher != null)
+                    {
+                        removedTeachers.Add($"{teacher.LastName} {teacher.FirstName}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking for removed teacher relationships");
+        }
+        
+        return removedTeachers;
     }
 } 

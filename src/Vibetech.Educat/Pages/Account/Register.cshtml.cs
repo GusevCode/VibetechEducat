@@ -94,6 +94,9 @@ public sealed class RegisterModel : PageModel
 
         public IFormFile? Photo { get; set; }
 
+        [StringLength(1000, ErrorMessage = "Максимальная длина — 1000 символов")]
+        public string? ContactInformation { get; set; }
+
         // Teacher-specific fields
         public string? Education { get; set; }
         public List<string> SelectedPrograms { get; set; } = new();
@@ -112,7 +115,7 @@ public sealed class RegisterModel : PageModel
         // Очистка ошибок при открытии страницы
         ErrorMessage = string.Empty;
         LoginAlreadyExists = false;
-        
+
         // Загрузка списка доступных предметов
         await LoadFormDataAsync();
     }
@@ -123,15 +126,15 @@ public sealed class RegisterModel : PageModel
         
         try
         {
-            // Валидация даты рождения
-            if (Input.BirthDate == default)
-            {
-                ModelState.AddModelError("Input.BirthDate", "Пожалуйста, выберите дату рождения");
-            }
-            
-            // Проверяем валидацию только для полей репетитора, если выбрана роль репетитора
-            if (Input.Role == "Tutor")
-            {
+        // Валидация даты рождения
+        if (Input.BirthDate == default)
+        {
+            ModelState.AddModelError("Input.BirthDate", "Пожалуйста, выберите дату рождения");
+        }
+
+        // Проверяем валидацию только для полей репетитора, если выбрана роль репетитора
+        if (Input.Role == "Tutor")
+        {
                 ValidateTeacherFields();
             }
             
@@ -152,9 +155,11 @@ public sealed class RegisterModel : PageModel
                 Role = Input.Role == "Tutor" ? "Teacher" : "Student",
                 PasswordHash = string.Empty, // Initialize with empty string, will be set by AuthService
                 CreatedAt = DateTime.UtcNow,
-                BirthDate = NormalizeDateTimeToUtc(Input.BirthDate)
+                BirthDate = NormalizeDateTimeToUtc(Input.BirthDate),
+                Gender = Input.Gender,
+                ContactInformation = Input.ContactInformation
             };
-            
+
             _logger.LogInformation("Создан объект пользователя: {User}", user);
 
             // Сохраняем фото, если оно есть
@@ -250,43 +255,43 @@ public sealed class RegisterModel : PageModel
     private async Task CreateTeacherProfileAsync(int userId)
     {
         _logger.LogInformation("Создание профиля репетитора для пользователя {Id}", userId);
-        var teacherProfile = new TeacherProfile
-        {
+                    var teacherProfile = new TeacherProfile
+                    {
             UserId = userId,
-            Education = Input.Education ?? string.Empty,
-            PreparationPrograms = Input.SelectedPrograms.ToArray(),
-            HourlyRate = Input.HourlyRate ?? 0,
-            ExperienceYears = Input.ExperienceYears ?? 0,
-            CreatedAt = DateTime.UtcNow
-        };
+                        Education = Input.Education ?? string.Empty,
+                        PreparationPrograms = Input.SelectedPrograms.ToArray(),
+                        HourlyRate = Input.HourlyRate ?? 0,
+                        ExperienceYears = Input.ExperienceYears ?? 0,
+                        CreatedAt = DateTime.UtcNow
+                    };
 
-        await _unitOfWork.TeacherProfiles.AddAsync(teacherProfile);
-        await _unitOfWork.SaveChangesAsync();
-        _logger.LogInformation("Профиль репетитора успешно создан");
+                    await _unitOfWork.TeacherProfiles.AddAsync(teacherProfile);
+                    await _unitOfWork.SaveChangesAsync();
+                    _logger.LogInformation("Профиль репетитора успешно создан");
 
-        // Добавляем связи с предметами
-        foreach (var subjectId in Input.SelectedSubjects)
-        {
-            // Проверяем существование предмета
-            var subject = await _unitOfWork.Subjects.GetByIdAsync(subjectId);
-            if (subject == null)
-            {
-                _logger.LogWarning("Предмет с ID {SubjectId} не найден", subjectId);
-                continue;
-            }
+                    // Добавляем связи с предметами
+                    foreach (var subjectId in Input.SelectedSubjects)
+                    {
+                        // Проверяем существование предмета
+                        var subject = await _unitOfWork.Subjects.GetByIdAsync(subjectId);
+                        if (subject == null)
+                        {
+                            _logger.LogWarning("Предмет с ID {SubjectId} не найден", subjectId);
+                            continue;
+                        }
 
-            var teacherSubject = new TeacherSubject
-            {
-                TeacherProfileId = teacherProfile.Id,
-                SubjectId = subjectId,
-            };
-            await _unitOfWork.TeacherSubjects.AddAsync(teacherSubject);
-            _logger.LogInformation("Добавлен предмет {SubjectId} для репетитора {TeacherId}", subjectId, teacherProfile.Id);
-        }
-        await _unitOfWork.SaveChangesAsync();
-        _logger.LogInformation("Связи с предметами успешно добавлены");
-    }
-    
+                        var teacherSubject = new TeacherSubject
+                        {
+                            TeacherProfileId = teacherProfile.Id,
+                            SubjectId = subjectId,
+                        };
+                        await _unitOfWork.TeacherSubjects.AddAsync(teacherSubject);
+                        _logger.LogInformation("Добавлен предмет {SubjectId} для репетитора {TeacherId}", subjectId, teacherProfile.Id);
+                    }
+                    await _unitOfWork.SaveChangesAsync();
+                    _logger.LogInformation("Связи с предметами успешно добавлены");
+                }
+
     private DateTime NormalizeDateTimeToUtc(DateTime dateTime)
     {
         return dateTime.Kind != DateTimeKind.Utc 

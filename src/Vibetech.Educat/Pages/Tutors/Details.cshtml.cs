@@ -28,6 +28,7 @@ public class DetailsModel : PageModel
         public required string About { get; set; }
         public required string Phone { get; set; }
         public required string Email { get; set; }
+        public string? ContactInformation { get; set; }
         public required List<ReviewViewModel> Reviews { get; set; }
     }
 
@@ -74,6 +75,7 @@ public class DetailsModel : PageModel
             About = "Опытный репетитор по математике. Готовлю к ОГЭ, ЕГЭ и олимпиадам. Индивидуальный подход к каждому ученику.",
             Phone = "+7 (999) 123-45-67",
             Email = "ivanov@example.com",
+            ContactInformation = "Telegram: @ivanov_math, WhatsApp: +79991234567",
             Reviews = new List<ReviewViewModel>
             {
                 new ReviewViewModel

@@ -28,6 +28,10 @@ public class LessonDetailsModel : PageModel
     
     public int CurrentUserId { get; set; }
     
+    // Properties for teacher removal notifications
+    public bool TeacherRemoved { get; set; }
+    public string TeacherRemovedMessage { get; set; } = string.Empty;
+    
     [BindProperty]
     public IFormFile? UploadedFile { get; set; }
     
@@ -79,6 +83,12 @@ public class LessonDetailsModel : PageModel
             if (HasReview)
             {
                 Review = reviews.FirstOrDefault();
+            }
+            
+            // Check if the teacher has recently removed the student
+            if (Lesson.TeacherProfile != null)
+            {
+                await CheckForTeacherRemoval(studentId, Lesson.TeacherProfileId);
             }
             
             return Page();
@@ -408,6 +418,33 @@ public class LessonDetailsModel : PageModel
         {
             _logger.LogError(ex, "Error updating teacher rating");
             // We don't want to stop the flow if rating update fails
+        }
+    }
+
+    // Helper method to check if the teacher has recently removed the student
+    private async Task CheckForTeacherRemoval(int studentId, int teacherProfileId)
+    {
+        try
+        {
+            // Check for recently rejected teacher-student relationships
+            var yesterday = DateTime.UtcNow.AddDays(-1);
+            var recentRemovals = await _unitOfWork.TeacherStudents.FindAsync(
+                ts => ts.StudentId == studentId && 
+                      ts.TeacherProfileId == teacherProfileId &&
+                      ts.Status == RequestStatus.Rejected &&
+                      ts.UpdatedAt.HasValue && 
+                      ts.UpdatedAt > yesterday);
+                      
+            if (recentRemovals.Any() && Lesson?.TeacherProfile?.User != null)
+            {
+                TeacherRemoved = true;
+                var teacher = Lesson.TeacherProfile.User;
+                TeacherRemovedMessage = $"Вы больше не занимаетесь у репетитора {teacher.LastName} {teacher.FirstName}. Чтобы возобновить занятия, вам необходимо отправить новую заявку.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking for teacher removal");
         }
     }
 } 

@@ -181,7 +181,7 @@
                                 <i class="bi bi-calendar3 me-2"></i>Дата рождения
                             </label>
                             <div class="input-group has-validation">
-                                <input asp-for="Input.BirthDate" type="text" class="form-control datepicker" id="birthDatePicker" placeholder="Выберите дату рождения" value="" readonly />
+                                    <input asp-for="Input.BirthDate" type="text" class="form-control datepicker" id="birthDatePicker" placeholder="Выберите дату рождения" value="" readonly />
                                 <div class="invalid-feedback">
                                     <span asp-validation-for="Input.BirthDate"></span>
                                 </div>
@@ -214,6 +214,15 @@
                             <span asp-validation-for="Input.Photo" class="text-danger"></span>
                         </div>
 
+                        <div class="mb-3">
+                            <label asp-for="Input.ContactInformation" class="form-label fw-bold">
+                                <i class="bi bi-chat-fill me-2"></i>Контактная информация
+                            </label>
+                            <textarea asp-for="Input.ContactInformation" class="form-control" placeholder="Телефон, Telegram, WhatsApp, VK и т.д." rows="2"></textarea>
+                            <div class="form-text">Здесь вы можете указать любую контактную информацию (не обязательно)</div>
+                            <span asp-validation-for="Input.ContactInformation" class="text-danger"></span>
+                        </div>
+
                         <div id="tutorFields" style="display: none;">
                             <div class="mb-4">
                                 <div class="alert alert-info" role="alert">
@@ -234,7 +243,7 @@
                                     <i class="bi bi-mortarboard me-2"></i>Образование
                                 </label>
                                 <div class="input-group has-validation">
-                                    <textarea asp-for="Input.Education" class="form-control" placeholder="Введите информацию об образовании (ВУЗ, факультет, специальность, год окончания)" rows="3"></textarea>
+                                <textarea asp-for="Input.Education" class="form-control" placeholder="Введите информацию об образовании (ВУЗ, факультет, специальность, год окончания)" rows="3"></textarea>
                                     <div class="invalid-feedback">
                                         <span asp-validation-for="Input.Education"></span>
                                     </div>
@@ -346,13 +355,13 @@
             
             // Инициализация календаря
             flatpickr("#birthDatePicker", {
-                dateFormat: "d.m.Y",
-                locale: "ru",
-                maxDate: new Date(),
-                allowInput: false,
-                disableMobile: true,
-                onChange: function(selectedDates, dateStr) {
-                    if (dateStr) {
+                    dateFormat: "d.m.Y",
+                    locale: "ru",
+                    maxDate: new Date(),
+                    allowInput: false,
+                    disableMobile: true,
+                    onChange: function(selectedDates, dateStr) {
+                        if (dateStr) {
                         $("#birthDatePicker").attr('data-date-set', 'true');
                         $('form').data('validator').element("#birthDatePicker");
                     }
@@ -360,12 +369,12 @@
             });
             
             // Кастомное правило для даты рождения
-            $.validator.addMethod("birthDateRequired", function(value, element) {
-                return $(element).attr('data-date-set') === 'true';
-            }, "Пожалуйста, выберите дату рождения");
-            
+                $.validator.addMethod("birthDateRequired", function(value, element) {
+                    return $(element).attr('data-date-set') === 'true';
+                }, "Пожалуйста, выберите дату рождения");
+                
             $("#birthDatePicker").rules("add", {
-                birthDateRequired: true
+                    birthDateRequired: true
             });
             
             // Select2 для выпадающих списков

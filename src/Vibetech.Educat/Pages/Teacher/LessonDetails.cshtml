@@ -117,6 +117,12 @@
                         <h5><i class="bi bi-person"></i> Студент</h5>
                         <p>@(Model.Lesson.Student != null ? $"{Model.Lesson.Student.LastName} {Model.Lesson.Student.FirstName}" : "Студент не назначен")</p>
                         
+                        @if (Model.Lesson.Student != null && !string.IsNullOrEmpty(Model.Lesson.Student.ContactInformation))
+                        {
+                            <h5><i class="bi bi-chat-dots"></i> Контактная информация</h5>
+                            <p>@Model.Lesson.Student.ContactInformation</p>
+                        }
+                        
                         @if (!string.IsNullOrEmpty(Model.Lesson.VideoCallUrl))
                         {
                             <h5><i class="bi bi-camera-video"></i> Ссылка на конференцию</h5>

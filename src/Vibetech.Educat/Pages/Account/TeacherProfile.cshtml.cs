@@ -59,6 +59,10 @@ public class TeacherProfileModel : PageModel
         [Display(Name = "Образование")]
         public string Education { get; set; } = string.Empty;
 
+        [Display(Name = "Контактная информация")]
+        [StringLength(1000, ErrorMessage = "Максимальная длина — 1000 символов")]
+        public string? ContactInformation { get; set; }
+
         [Required(ErrorMessage = "Поле Опыт преподавания обязательно для заполнения")]
         [Display(Name = "Опыт преподавания (лет)")]
         [Range(0, 50, ErrorMessage = "Опыт преподавания должен быть от 0 до 50 лет")]
@@ -119,6 +123,7 @@ public class TeacherProfileModel : PageModel
                 MiddleName = user.MiddleName,
                 BirthDate = user.BirthDate,
                 Gender = user.Gender,
+                ContactInformation = user.ContactInformation,
                 Education = teacherProfile.Education,
                 ExperienceYears = teacherProfile.ExperienceYears,
                 HourlyRate = teacherProfile.HourlyRate,
@@ -208,6 +213,7 @@ public class TeacherProfileModel : PageModel
             }
             
             user.Gender = Input.Gender;
+            user.ContactInformation = Input.ContactInformation;
             user.UpdatedAt = DateTime.UtcNow;
 
             await _unitOfWork.Users.UpdateAsync(user);
@@ -286,6 +292,7 @@ public class TeacherProfileModel : PageModel
             }
             
             user.Gender = Input.Gender;
+            user.ContactInformation = Input.ContactInformation;
             user.UpdatedAt = DateTime.UtcNow;
             
             await _unitOfWork.Users.UpdateAsync(user);
