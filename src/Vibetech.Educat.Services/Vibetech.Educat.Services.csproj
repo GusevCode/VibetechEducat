@@ -3,12 +3,17 @@
     <PropertyGroup>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net8.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Vibetech.Educat.Common\Vibetech.Educat.Common.csproj" />
       <ProjectReference Include="..\Vibetech.Educat.Domain\Vibetech.Educat.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Remove="appsettings*.json" />
+      <None Include="appsettings*.json" CopyToPublishDirectory="Never" />
     </ItemGroup>
 
 </Project>

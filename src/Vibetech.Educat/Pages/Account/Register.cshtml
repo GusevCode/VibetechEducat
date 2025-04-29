@@ -12,6 +12,27 @@
     .button-spacing {
         margin-top: 15px;
     }
+    
+    /* Исправление стилей календаря */
+    .flatpickr-calendar {
+        z-index: 9999 !important;
+    }
+    
+    /* Гарантируем видимость */
+    .flatpickr-calendar.open {
+        display: block !important;
+    }
+    
+    /* Стилизация поля даты */
+    #birthDatePicker {
+        background-color: #fff;
+        cursor: pointer;
+    }
+    
+    #birthDatePicker:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        border-color: #86b7fe;
+    }
 </style>
 
 <div class="container mt-5">
@@ -27,6 +48,8 @@
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
                         </div>
                     }
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
                     <form method="post" enctype="multipart/form-data">
                         <div class="mb-4">
@@ -51,6 +74,12 @@
                             </label>
                             <input asp-for="Input.Login" class="form-control" placeholder="Введите логин" />
                             <span asp-validation-for="Input.Login" class="text-danger"></span>
+                            @if (Model.LoginAlreadyExists)
+                            {
+                                <div class="text-danger mt-1">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Пользователь с таким логином уже существует
+                                </div>
+                            }
                         </div>
 
                         <div class="mb-3">
@@ -99,13 +128,14 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-3 w-100">
                             <label asp-for="Input.BirthDate" class="form-label fw-bold">
                                 <i class="bi bi-calendar3 me-2"></i>Дата рождения
                             </label>
-                            <div class="input-group">
-                                <input asp-for="Input.BirthDate" type="text" class="form-control datepicker" placeholder="Выберите дату рождения" value="" />
-                                <span class="input-group-text"><i class="bi bi-calendar-date"></i></span>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <input asp-for="Input.BirthDate" type="text" class="form-control datepicker" id="birthDatePicker" placeholder="Выберите дату рождения" value="" readonly />
+                                </div>
                             </div>
                             <span asp-validation-for="Input.BirthDate" class="text-danger"></span>
                         </div>
@@ -137,6 +167,20 @@
                         </div>
 
                         <div id="tutorFields" style="display: none;">
+                            <div class="mb-4">
+                                <div class="alert alert-info" role="alert">
+                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                    <strong>Обратите внимание!</strong> Для регистрации в качестве репетитора необходимо заполнить следующие поля:
+                                    <ul class="mb-0 mt-2">
+                                        <li>Образование</li>
+                                        <li>Стоимость часа</li>
+                                        <li>Опыт работы</li>
+                                        <li>Выбрать хотя бы один предмет</li>
+                                        <li>Выбрать хотя бы одну программу подготовки</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
                             <div class="mb-3">
                                 <label asp-for="Input.Education" class="form-label fw-bold">
                                     <i class="bi bi-mortarboard me-2"></i>Образование
@@ -232,63 +276,112 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Очищаем поле даты рождения при загрузке страницы
-            document.querySelector(".datepicker").value = "";
+        // Исполняется гарантированно после полной загрузки DOM
+        $(document).ready(function() {
+            // Ссылка на DOM-элемент календаря
+            const dateInput = document.getElementById('birthDatePicker');
+            
+            // Проверяем, что элемент найден
+            if (!dateInput) {
+                console.error("Элемент календаря не найден на странице");
+                return;
+            }
             
             // Перехватываем стандартное сообщение об ошибке валидации даты
             $.validator.messages.date = "Пожалуйста, введите корректную дату";
             
-            // Кастомное сообщение для поля даты рождения
-            $('form').data('validator').settings.messages["Input.BirthDate"] = {
-                required: "Пожалуйста, выберите дату рождения"
-            };
+            try {
+                // Кастомное сообщение для поля даты рождения
+                $('form').data('validator').settings.messages["Input.BirthDate"] = {
+                    required: "Пожалуйста, выберите дату рождения"
+                };
+            } catch (e) {
+                console.error("Ошибка настройки валидатора:", e);
+            }
             
-            // Инициализация датапикера
-            const datepicker = flatpickr(".datepicker", {
-                dateFormat: "d.m.Y",
-                locale: "ru",
-                maxDate: new Date(),
-                allowInput: true,
-                disableMobile: true,
-                position: "auto",
-                defaultDate: null, // Устанавливаем пустую дату по умолчанию
-                onChange: function(selectedDates, dateStr) {
-                    // Устанавливаем атрибут required-valid при изменении даты
-                    if (dateStr) {
-                        $('.datepicker').attr('data-date-set', 'true');
-                        // Запускаем валидацию поля
-                        $('form').validate().element('.datepicker');
+            // Создаем календарь принудительно на конкретном элементе
+            let fpInstance = null;
+            try {
+                fpInstance = flatpickr(dateInput, {
+                    dateFormat: "d.m.Y",
+                    locale: "ru",
+                    maxDate: new Date(),
+                    allowInput: false,
+                    disableMobile: true,
+                    static: true,
+                    position: "below center",
+                    defaultDate: null,
+                    clickOpens: true,
+                    appendTo: document.body, // Прикрепляем к body для максимальной видимости
+                    onOpen: function() {
+                        console.log("Календарь открыт");
+                    },
+                    onClose: function() {
+                        console.log("Календарь закрыт");
+                    },
+                    onChange: function(selectedDates, dateStr) {
+                        console.log("Выбрана дата:", dateStr);
+                        if (dateStr) {
+                            $(dateInput).attr('data-date-set', 'true');
+                            try {
+                                $('form').validate().element(dateInput);
+                            } catch (e) {
+                                console.error("Ошибка валидации:", e);
+                            }
+                        }
                     }
+                });
+                
+                console.log("Календарь успешно инициализирован");
+                
+                // Проверка и принудительная установка русской локализации
+                if (flatpickr.l10ns && flatpickr.l10ns.ru) {
+                    flatpickr.localize(flatpickr.l10ns.ru);
+                    console.log("Локализация установлена");
+                } else {
+                    console.error("Локализация не найдена");
                 }
-            });
+            } catch (e) {
+                console.error("Ошибка инициализации календаря:", e);
+            }
             
             // Добавляем кастомное правило валидации
-            $.validator.addMethod("birthDateRequired", function(value, element) {
-                return $(element).attr('data-date-set') === 'true';
-            }, "Пожалуйста, выберите дату рождения");
-            
-            // Добавляем правило к полю даты рождения
-            $('.datepicker').rules("add", {
-                birthDateRequired: true
-            });
+            try {
+                $.validator.addMethod("birthDateRequired", function(value, element) {
+                    return $(element).attr('data-date-set') === 'true';
+                }, "Пожалуйста, выберите дату рождения");
+                
+                // Добавляем правило к полю даты рождения
+                $(dateInput).rules("add", {
+                    birthDateRequired: true
+                });
+            } catch (e) {
+                console.error("Ошибка добавления правила валидации:", e);
+            }
             
             // При отправке формы проверяем, что дата выбрана
             $('form').submit(function(e) {
-                if (!$('.datepicker').attr('data-date-set')) {
+                if (!$(dateInput).attr('data-date-set')) {
                     e.preventDefault();
                     // Отображаем ошибку
-                    $('.datepicker').addClass('is-invalid');
+                    $(dateInput).addClass('is-invalid');
                     let errorMsg = $('<div id="Input_BirthDate-error" class="text-danger">Пожалуйста, выберите дату рождения</div>');
                     if (!$('#Input_BirthDate-error').length) {
-                        errorMsg.insertAfter($('.datepicker').closest('.input-group'));
+                        errorMsg.insertAfter($(dateInput).closest('.position-relative'));
                     }
                     // Прокручиваем к полю с ошибкой
                     $('html, body').animate({
-                        scrollTop: $('.datepicker').offset().top - 100
+                        scrollTop: $(dateInput).offset().top - 100
                     }, 200);
+                    
+                    // Дополнительно, попробуем открыть календарь
+                    if (fpInstance) {
+                        setTimeout(function() {
+                            fpInstance.open();
+                        }, 300);
+                    }
                 }
             });
             
