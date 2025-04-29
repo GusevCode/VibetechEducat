@@ -216,10 +216,7 @@ public class CreateLessonModel : PageModel
                 .FindAsync(ts => ts.TeacherProfileId == teacherProfileId && ts.Status == RequestStatus.Accepted);
                 
             if (teacherStudents != null && teacherStudents.Any())
-            {
-                // Add placeholder option
-                StudentItems.Add(new SelectListItem { Value = "", Text = "Выберите студента (необязательно)" });
-                
+            {   
                 // Get student details and add them to the items list
                 foreach (var ts in teacherStudents)
                 {
