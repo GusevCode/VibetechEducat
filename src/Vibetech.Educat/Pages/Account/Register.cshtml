@@ -13,14 +13,34 @@
         margin-top: 15px;
     }
     
-    /* Исправление стилей календаря */
+    /* Стили для календаря */
     .flatpickr-calendar {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
         z-index: 9999 !important;
     }
     
-    /* Гарантируем видимость */
-    .flatpickr-calendar.open {
-        display: block !important;
+    .flatpickr-day.selected, 
+    .flatpickr-day.startRange, 
+    .flatpickr-day.endRange, 
+    .flatpickr-day.selected.inRange, 
+    .flatpickr-day.startRange.inRange, 
+    .flatpickr-day.endRange.inRange, 
+    .flatpickr-day.selected:focus, 
+    .flatpickr-day.startRange:focus, 
+    .flatpickr-day.endRange:focus, 
+    .flatpickr-day.selected:hover, 
+    .flatpickr-day.startRange:hover, 
+    .flatpickr-day.endRange:hover {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    
+    .flatpickr-day.selected.startRange + .endRange:not(:nth-child(7n+1)), 
+    .flatpickr-day.startRange.startRange + .endRange:not(:nth-child(7n+1)), 
+    .flatpickr-day.endRange.startRange + .endRange:not(:nth-child(7n+1)) {
+        box-shadow: -10px 0 0 #0d6efd;
     }
     
     /* Стилизация поля даты */
@@ -32,6 +52,22 @@
     #birthDatePicker:focus {
         box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
         border-color: #86b7fe;
+    }
+    
+    /* Для полей с ошибками */
+    .input-validation-error {
+        border-color: #dc3545;
+    }
+    
+    .input-validation-error:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+    }
+    
+    .field-validation-error {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
     }
 </style>
 
@@ -72,8 +108,12 @@
                             <label asp-for="Input.Login" class="form-label fw-bold">
                                 <i class="bi bi-person-circle me-2"></i>Логин
                             </label>
-                            <input asp-for="Input.Login" class="form-control" placeholder="Введите логин" />
-                            <span asp-validation-for="Input.Login" class="text-danger"></span>
+                            <div class="input-group has-validation">
+                                <input asp-for="Input.Login" class="form-control" placeholder="Введите логин" autocomplete="username" />
+                                <div class="invalid-feedback" id="login-feedback">
+                                    <span asp-validation-for="Input.Login"></span>
+                                </div>
+                            </div>
                             @if (Model.LoginAlreadyExists)
                             {
                                 <div class="text-danger mt-1">
@@ -86,16 +126,24 @@
                             <label asp-for="Input.Password" class="form-label fw-bold">
                                 <i class="bi bi-key-fill me-2"></i>Пароль
                             </label>
-                            <input asp-for="Input.Password" type="password" class="form-control" placeholder="Введите пароль" />
-                            <span asp-validation-for="Input.Password" class="text-danger"></span>
+                            <div class="input-group has-validation">
+                                <input asp-for="Input.Password" type="password" class="form-control" placeholder="Введите пароль" autocomplete="new-password" />
+                                <div class="invalid-feedback">
+                                    <span asp-validation-for="Input.Password"></span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="Input.ConfirmPassword" class="form-label fw-bold">
                                 <i class="bi bi-key me-2"></i>Подтверждение пароля
                             </label>
-                            <input asp-for="Input.ConfirmPassword" type="password" class="form-control" placeholder="Подтвердите пароль" />
-                            <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                            <div class="input-group has-validation">
+                                <input asp-for="Input.ConfirmPassword" type="password" class="form-control" placeholder="Подтвердите пароль" autocomplete="new-password" />
+                                <div class="invalid-feedback">
+                                    <span asp-validation-for="Input.ConfirmPassword"></span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="row">
@@ -132,12 +180,12 @@
                             <label asp-for="Input.BirthDate" class="form-label fw-bold">
                                 <i class="bi bi-calendar3 me-2"></i>Дата рождения
                             </label>
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <input asp-for="Input.BirthDate" type="text" class="form-control datepicker" id="birthDatePicker" placeholder="Выберите дату рождения" value="" readonly />
+                            <div class="input-group has-validation">
+                                <input asp-for="Input.BirthDate" type="text" class="form-control datepicker" id="birthDatePicker" placeholder="Выберите дату рождения" value="" readonly />
+                                <div class="invalid-feedback">
+                                    <span asp-validation-for="Input.BirthDate"></span>
                                 </div>
                             </div>
-                            <span asp-validation-for="Input.BirthDate" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
@@ -185,8 +233,12 @@
                                 <label asp-for="Input.Education" class="form-label fw-bold">
                                     <i class="bi bi-mortarboard me-2"></i>Образование
                                 </label>
-                                <textarea asp-for="Input.Education" class="form-control" placeholder="Введите информацию об образовании (ВУЗ, факультет, специальность, год окончания)" rows="3"></textarea>
-                                <span asp-validation-for="Input.Education" class="text-danger"></span>
+                                <div class="input-group has-validation">
+                                    <textarea asp-for="Input.Education" class="form-control" placeholder="Введите информацию об образовании (ВУЗ, факультет, специальность, год окончания)" rows="3"></textarea>
+                                    <div class="invalid-feedback">
+                                        <span asp-validation-for="Input.Education"></span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -218,16 +270,26 @@
                                 <label asp-for="Input.ExperienceYears" class="form-label fw-bold">
                                     <i class="bi bi-clock-history me-2"></i>Опыт работы (лет)
                                 </label>
-                                <input asp-for="Input.ExperienceYears" type="number" class="form-control" placeholder="Введите опыт работы" />
-                                <span asp-validation-for="Input.ExperienceYears" class="text-danger"></span>
+                                <div class="input-group has-validation">
+                                    <input asp-for="Input.ExperienceYears" type="number" min="0" max="50" class="form-control" placeholder="Введите опыт работы" />
+                                    <span class="input-group-text">лет</span>
+                                    <div class="invalid-feedback">
+                                        <span asp-validation-for="Input.ExperienceYears"></span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="mb-3">
                                 <label asp-for="Input.HourlyRate" class="form-label fw-bold">
                                     <i class="bi bi-currency-ruble me-2"></i>Базовая стоимость часа (₽)
                                 </label>
-                                <input asp-for="Input.HourlyRate" type="number" class="form-control" placeholder="Введите стоимость" />
-                                <span asp-validation-for="Input.HourlyRate" class="text-danger"></span>
+                                <div class="input-group has-validation">
+                                    <input asp-for="Input.HourlyRate" type="number" min="0" max="10000" step="0.01" class="form-control" placeholder="Введите стоимость" />
+                                    <span class="input-group-text">₽</span>
+                                    <div class="invalid-feedback">
+                                        <span asp-validation-for="Input.HourlyRate"></span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -254,10 +316,6 @@
                                 </div>
                                 <span asp-validation-for="Input.SelectedSubjects" class="text-danger"></span>
                             </div>
-
-                            <div id="subjectPrices" class="mb-3">
-                                <!-- Здесь будут отображаться поля для индивидуальных цен по предметам -->
-                            </div>
                         </div>
 
                         <div class="d-grid gap-2 mt-4">
@@ -278,125 +336,44 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
     <script>
-        // Исполняется гарантированно после полной загрузки DOM
         $(document).ready(function() {
-            // Ссылка на DOM-элемент календаря
-            const dateInput = document.getElementById('birthDatePicker');
-            
-            // Проверяем, что элемент найден
-            if (!dateInput) {
-                console.error("Элемент календаря не найден на странице");
-                return;
-            }
-            
-            // Перехватываем стандартное сообщение об ошибке валидации даты
-            $.validator.messages.date = "Пожалуйста, введите корректную дату";
-            
-            try {
-                // Кастомное сообщение для поля даты рождения
-                $('form').data('validator').settings.messages["Input.BirthDate"] = {
-                    required: "Пожалуйста, выберите дату рождения"
-                };
-            } catch (e) {
-                console.error("Ошибка настройки валидатора:", e);
-            }
-            
-            // Создаем календарь принудительно на конкретном элементе
-            let fpInstance = null;
-            try {
-                fpInstance = flatpickr(dateInput, {
-                    dateFormat: "d.m.Y",
-                    locale: "ru",
-                    maxDate: new Date(),
-                    allowInput: false,
-                    disableMobile: true,
-                    static: true,
-                    position: "below center",
-                    defaultDate: null,
-                    clickOpens: true,
-                    appendTo: document.body, // Прикрепляем к body для максимальной видимости
-                    onOpen: function() {
-                        console.log("Календарь открыт");
-                    },
-                    onClose: function() {
-                        console.log("Календарь закрыт");
-                    },
-                    onChange: function(selectedDates, dateStr) {
-                        console.log("Выбрана дата:", dateStr);
-                        if (dateStr) {
-                            $(dateInput).attr('data-date-set', 'true');
-                            try {
-                                $('form').validate().element(dateInput);
-                            } catch (e) {
-                                console.error("Ошибка валидации:", e);
-                            }
-                        }
-                    }
-                });
-                
-                console.log("Календарь успешно инициализирован");
-                
-                // Проверка и принудительная установка русской локализации
-                if (flatpickr.l10ns && flatpickr.l10ns.ru) {
-                    flatpickr.localize(flatpickr.l10ns.ru);
-                    console.log("Локализация установлена");
-                } else {
-                    console.error("Локализация не найдена");
+            // Включение валидации в реальном времени
+            $('form').data('validator').settings.onkeyup = function (element, event) {
+                if (element.name in $('form').data('validator').settings.rules) {
+                    $('form').data('validator').element(element);
                 }
-            } catch (e) {
-                console.error("Ошибка инициализации календаря:", e);
-            }
+            };
             
-            // Добавляем кастомное правило валидации
-            try {
-                $.validator.addMethod("birthDateRequired", function(value, element) {
-                    return $(element).attr('data-date-set') === 'true';
-                }, "Пожалуйста, выберите дату рождения");
-                
-                // Добавляем правило к полю даты рождения
-                $(dateInput).rules("add", {
-                    birthDateRequired: true
-                });
-            } catch (e) {
-                console.error("Ошибка добавления правила валидации:", e);
-            }
-            
-            // При отправке формы проверяем, что дата выбрана
-            $('form').submit(function(e) {
-                if (!$(dateInput).attr('data-date-set')) {
-                    e.preventDefault();
-                    // Отображаем ошибку
-                    $(dateInput).addClass('is-invalid');
-                    let errorMsg = $('<div id="Input_BirthDate-error" class="text-danger">Пожалуйста, выберите дату рождения</div>');
-                    if (!$('#Input_BirthDate-error').length) {
-                        errorMsg.insertAfter($(dateInput).closest('.position-relative'));
-                    }
-                    // Прокручиваем к полю с ошибкой
-                    $('html, body').animate({
-                        scrollTop: $(dateInput).offset().top - 100
-                    }, 200);
-                    
-                    // Дополнительно, попробуем открыть календарь
-                    if (fpInstance) {
-                        setTimeout(function() {
-                            fpInstance.open();
-                        }, 300);
+            // Инициализация календаря
+            flatpickr("#birthDatePicker", {
+                dateFormat: "d.m.Y",
+                locale: "ru",
+                maxDate: new Date(),
+                allowInput: false,
+                disableMobile: true,
+                onChange: function(selectedDates, dateStr) {
+                    if (dateStr) {
+                        $("#birthDatePicker").attr('data-date-set', 'true');
+                        $('form').data('validator').element("#birthDatePicker");
                     }
                 }
             });
             
-            // Инициализация Select2 для выпадающих списков
-            $('#subjectSelect').select2({
-                placeholder: 'Выберите предмет',
+            // Кастомное правило для даты рождения
+            $.validator.addMethod("birthDateRequired", function(value, element) {
+                return $(element).attr('data-date-set') === 'true';
+            }, "Пожалуйста, выберите дату рождения");
+            
+            $("#birthDatePicker").rules("add", {
+                birthDateRequired: true
+            });
+            
+            // Select2 для выпадающих списков
+            $('#subjectSelect, #programSelect').select2({
                 width: '100%'
             });
 
-            $('#programSelect').select2({
-                placeholder: 'Выберите программу',
-                width: '100%'
-            });
-
-            // Показываем/скрываем поля репетитора при выборе роли
+            // Показывать/скрывать поля репетитора
             $('input[name="Input.Role"]').change(function() {
                 if ($(this).val() === 'Tutor') {
                     $('#tutorFields').show();
@@ -407,97 +384,51 @@
 
             // Управление программами подготовки
             $('#addProgramBtn').click(function() {
-                const select = $('#programSelect');
-                const program = select.val();
-                const programText = select.find('option:selected').text();
-                
-                if (!program) return;
-                
-                // Проверяем, не выбрана ли уже эта программа
-                if ($('#programsContainer').find(`[data-program="${program}"]`).length === 0) {
-                    // Создаем бейдж для программы
-                    const badge = $(`
-                        <div class="badge bg-primary d-flex align-items-center mb-1 me-1" data-program="${program}">
-                            <span>${programText}</span>
-                            <button type="button" class="btn-close btn-close-white ms-2 delete-program-btn" aria-label="Close"></button>
-                            <input type="hidden" name="Input.SelectedPrograms" value="${program}" />
-                        </div>
-                    `);
-                    
-                    // Добавляем обработчик для удаления
-                    badge.find('.delete-program-btn').click(function() {
-                        badge.remove();
-                        
-                        // Возвращаем опцию в селект
-                        if (select.find(`option[value="${program}"]`).length === 0) {
-                            select.append(new Option(programText, program));
-                            select.val(null).trigger('change');
-                        }
-                    });
-                    
-                    // Добавляем бейдж в контейнер
-                    $('#programsContainer').append(badge);
-                    
-                    // Удаляем опцию из селекта
-                    select.find(`option[value="${program}"]`).remove();
-                    select.val(null).trigger('change');
-                }
+                addSelectItem('program', $('#programSelect'), $('#programsContainer'), 'Input.SelectedPrograms');
             });
 
             // Управление предметами
             $('#addSubjectBtn').click(function() {
-                const select = $('#subjectSelect');
-                const subjectId = select.val();
-                const subjectText = select.find('option:selected').text();
+                addSelectItem('subject', $('#subjectSelect'), $('#subjectsContainer'), 'Input.SelectedSubjects');
+            });
+            
+            // Вспомогательная функция для добавления элементов из селекта
+            function addSelectItem(type, select, container, inputName) {
+                const id = select.val();
+                const text = select.find('option:selected').text();
                 
-                if (!subjectId) return;
+                if (!id) return;
                 
-                // Проверяем, не выбран ли уже этот предмет
-                if ($('#subjectsContainer').find(`[data-subject-id="${subjectId}"]`).length === 0) {
-                    // Создаем бейдж для предмета
+                const dataAttr = type === 'program' ? 'data-program' : 'data-subject-id';
+                
+                // Проверяем, не выбран ли уже этот элемент
+                if (container.find(`[${dataAttr}="${id}"]`).length === 0) {
+                    // Создаем бейдж
                     const badge = $(`
-                        <div class="badge bg-primary d-flex align-items-center mb-1 me-1" data-subject-id="${subjectId}">
-                            <span>${subjectText}</span>
-                            <button type="button" class="btn-close btn-close-white ms-2 delete-subject-btn" aria-label="Close"></button>
-                            <input type="hidden" name="Input.SelectedSubjects" value="${subjectId}" />
+                        <div class="badge bg-primary d-flex align-items-center mb-1 me-1" ${dataAttr}="${id}">
+                            <span>${text}</span>
+                            <button type="button" class="btn-close btn-close-white ms-2 delete-${type}-btn" aria-label="Close"></button>
+                            <input type="hidden" name="${inputName}" value="${id}" />
                         </div>
                     `);
                     
-                    // Добавляем обработчик для удаления
-                    badge.find('.delete-subject-btn').click(function() {
+                    // Обработчик для удаления
+                    badge.find(`.delete-${type}-btn`).click(function() {
                         badge.remove();
                         
-                        // Удаляем поле цены для этого предмета
-                        $(`#price-${subjectId}`).remove();
-                        
                         // Возвращаем опцию в селект
-                        if (select.find(`option[value="${subjectId}"]`).length === 0) {
-                            select.append(new Option(subjectText, subjectId));
+                        if (select.find(`option[value="${id}"]`).length === 0) {
+                            select.append(new Option(text, id));
                             select.val(null).trigger('change');
                         }
                     });
                     
-                    // Добавляем бейдж в контейнер
-                    $('#subjectsContainer').append(badge);
-                    
-                    // Добавляем поле для цены предмета
-                    const priceField = $(`
-                        <div class="mb-2" id="price-${subjectId}">
-                            <label class="form-label">${subjectText}</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" name="Input.SubjectPrices[${subjectId}]" placeholder="Цена за час"/>
-                                <span class="input-group-text">₽</span>
-                            </div>
-                        </div>
-                    `);
-                    
-                    $('#subjectPrices').append(priceField);
-                    
-                    // Удаляем опцию из селекта
-                    select.find(`option[value="${subjectId}"]`).remove();
+                    // Добавляем бейдж и удаляем опцию из селекта
+                    container.append(badge);
+                    select.find(`option[value="${id}"]`).remove();
                     select.val(null).trigger('change');
                 }
-            });
+            }
         });
     </script>
 } 

@@ -97,87 +97,50 @@ public sealed class RegisterModel : PageModel
         // Teacher-specific fields
         public string? Education { get; set; }
         public List<string> SelectedPrograms { get; set; } = new();
+        
+        [Range(0, 10000, ErrorMessage = "Стоимость должна быть от 0 до 10000 рублей")]
         public decimal? HourlyRate { get; set; }
+        
+        [Range(0, 50, ErrorMessage = "Опыт преподавания должен быть от 0 до 50 лет")]
         public int? ExperienceYears { get; set; }
+        
         public List<int> SelectedSubjects { get; set; } = new();
-        public Dictionary<int, decimal> SubjectPrices { get; set; } = new();
     }
 
     public async Task OnGetAsync()
     {
         // Очистка ошибок при открытии страницы
         ErrorMessage = string.Empty;
-
+        LoginAlreadyExists = false;
+        
         // Загрузка списка доступных предметов
-        var subjects = await _teacherService.GetAvailableSubjectsAsync();
-        AvailableSubjects = subjects.Select(s => new SelectListItem
-        {
-            Value = s.Id.ToString(),
-            Text = s.Name
-        }).ToList();
+        await LoadFormDataAsync();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         _logger.LogInformation("Начало регистрации нового пользователя");
         
-        // Валидация даты рождения
-        if (Input.BirthDate == default)
-        {
-            ModelState.AddModelError("Input.BirthDate", "Пожалуйста, выберите дату рождения");
-            await OnGetAsync(); // Перезагружаем список предметов
-            return Page();
-        }
-        
-        // Проверяем базовую валидацию модели
-        if (!ModelState.IsValid)
-        {
-            _logger.LogWarning("Модель не валидна: {Errors}", 
-                string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
-            await OnGetAsync(); // Перезагружаем список предметов
-            return Page();
-        }
-
-        // Проверяем валидацию только для полей репетитора, если выбрана роль репетитора
-        if (Input.Role == "Tutor")
-        {
-            var teacherErrors = new List<string>();
-
-            if (string.IsNullOrEmpty(Input.Education))
-            {
-                teacherErrors.Add("Введите образование");
-            }
-            if (!Input.HourlyRate.HasValue)
-            {
-                teacherErrors.Add("Введите стоимость часа");
-            }
-            if (!Input.ExperienceYears.HasValue)
-            {
-                teacherErrors.Add("Введите опыт работы");
-            }
-            if (!Input.SelectedSubjects.Any())
-            {
-                teacherErrors.Add("Выберите хотя бы один предмет");
-            }
-            if (!Input.SelectedPrograms.Any())
-            {
-                teacherErrors.Add("Выберите хотя бы одну программу подготовки");
-            }
-
-            if (teacherErrors.Any())
-            {
-                foreach (var error in teacherErrors)
-                {
-                    ModelState.AddModelError("", error);
-                }
-                _logger.LogWarning("Модель не валидна для репетитора: {Errors}", string.Join(", ", teacherErrors));
-                await OnGetAsync(); // Перезагружаем список предметов
-                return Page();
-            }
-        }
-
         try
         {
+            // Валидация даты рождения
+            if (Input.BirthDate == default)
+            {
+                ModelState.AddModelError("Input.BirthDate", "Пожалуйста, выберите дату рождения");
+            }
+            
+            // Проверяем валидацию только для полей репетитора, если выбрана роль репетитора
+            if (Input.Role == "Tutor")
+            {
+                ValidateTeacherFields();
+            }
+            
+            // Проверяем базовую валидацию модели
+            if (!ModelState.IsValid)
+            {
+                await LoadFormDataAsync();
+                return Page();
+            }
             
             var user = new User
             {
@@ -189,18 +152,9 @@ public sealed class RegisterModel : PageModel
                 Role = Input.Role == "Tutor" ? "Teacher" : "Student",
                 PasswordHash = string.Empty, // Initialize with empty string, will be set by AuthService
                 CreatedAt = DateTime.UtcNow,
-                BirthDate = Input.BirthDate,
+                BirthDate = NormalizeDateTimeToUtc(Input.BirthDate)
             };
             
-            if (Input.BirthDate.Kind != DateTimeKind.Utc)
-            {
-                user.BirthDate = DateTime.SpecifyKind(Input.BirthDate.Date, DateTimeKind.Utc);
-            }
-            else
-            {
-                user.BirthDate = Input.BirthDate;
-            }
-
             _logger.LogInformation("Создан объект пользователя: {User}", user);
 
             // Сохраняем фото, если оно есть
@@ -223,45 +177,7 @@ public sealed class RegisterModel : PageModel
                 // Если это репетитор, создаем профиль
                 if (Input.Role == "Tutor" && registeredUser != null)
                 {
-                    _logger.LogInformation("Создание профиля репетитора для пользователя {Id}", registeredUser.Id);
-                    var teacherProfile = new TeacherProfile
-                    {
-                        UserId = registeredUser.Id,
-                        Education = Input.Education ?? string.Empty,
-                        PreparationPrograms = Input.SelectedPrograms.ToArray(),
-                        HourlyRate = Input.HourlyRate ?? 0,
-                        ExperienceYears = Input.ExperienceYears ?? 0,
-                        CreatedAt = DateTime.UtcNow
-                    };
-
-                    await _unitOfWork.TeacherProfiles.AddAsync(teacherProfile);
-                    await _unitOfWork.SaveChangesAsync();
-                    _logger.LogInformation("Профиль репетитора успешно создан");
-
-                    // Добавляем связи с предметами
-                    foreach (var subjectId in Input.SelectedSubjects)
-                    {
-                        var price = Input.SubjectPrices.TryGetValue(subjectId, out var subjectPrice) ? subjectPrice : Input.HourlyRate ?? 0;
-                        
-                        // Проверяем существование предмета
-                        var subject = await _unitOfWork.Subjects.GetByIdAsync(subjectId);
-                        if (subject == null)
-                        {
-                            _logger.LogWarning("Предмет с ID {SubjectId} не найден", subjectId);
-                            continue;
-                        }
-
-                        var teacherSubject = new TeacherSubject
-                        {
-                            TeacherProfileId = teacherProfile.Id,
-                            SubjectId = subjectId,
-                            PricePerHour = price
-                        };
-                        await _unitOfWork.TeacherSubjects.AddAsync(teacherSubject);
-                        _logger.LogInformation("Добавлен предмет {SubjectId} для репетитора {TeacherId}", subjectId, teacherProfile.Id);
-                    }
-                    await _unitOfWork.SaveChangesAsync();
-                    _logger.LogInformation("Связи с предметами успешно добавлены");
+                    await CreateTeacherProfileAsync(registeredUser.Id);
                 }
 
                 // Перенаправляем на страницу логина
@@ -272,14 +188,14 @@ public sealed class RegisterModel : PageModel
                 _logger.LogWarning("Пользователь с логином {Login} уже существует", Input.Login);
                 LoginAlreadyExists = true;
                 ErrorMessage = "Пользователь с таким логином уже существует";
-                await OnGetAsync(); // Перезагружаем список предметов
+                await LoadFormDataAsync();
                 return Page();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при регистрации пользователя");
                 ErrorMessage = "Произошла ошибка при регистрации. Пожалуйста, попробуйте снова.";
-                await OnGetAsync(); // Перезагружаем список предметов
+                await LoadFormDataAsync();
                 return Page();
             }
         }
@@ -287,8 +203,94 @@ public sealed class RegisterModel : PageModel
         {
             _logger.LogError(ex, "Ошибка при регистрации пользователя");
             ErrorMessage = "Ошибка при регистрации: " + ex.Message;
-            await OnGetAsync(); // Перезагружаем список предметов
+            await LoadFormDataAsync();
             return Page();
         }
+    }
+    
+    private async Task LoadFormDataAsync()
+    {
+        // Загрузка списка доступных предметов для формы
+        var subjects = await _teacherService.GetAvailableSubjectsAsync();
+        AvailableSubjects = subjects.Select(s => new SelectListItem
+        {
+            Value = s.Id.ToString(),
+            Text = s.Name
+        }).ToList();
+    }
+    
+    private void ValidateTeacherFields()
+    {
+        if (string.IsNullOrEmpty(Input.Education))
+        {
+            ModelState.AddModelError("Input.Education", "Введите образование");
+        }
+        
+        if (!Input.HourlyRate.HasValue)
+        {
+            ModelState.AddModelError("Input.HourlyRate", "Введите стоимость часа");
+        }
+        
+        if (!Input.ExperienceYears.HasValue)
+        {
+            ModelState.AddModelError("Input.ExperienceYears", "Введите опыт работы");
+        }
+        
+        if (!Input.SelectedSubjects.Any())
+        {
+            ModelState.AddModelError("Input.SelectedSubjects", "Выберите хотя бы один предмет");
+        }
+        
+        if (!Input.SelectedPrograms.Any())
+        {
+            ModelState.AddModelError("Input.SelectedPrograms", "Выберите хотя бы одну программу подготовки");
+        }
+    }
+    
+    private async Task CreateTeacherProfileAsync(int userId)
+    {
+        _logger.LogInformation("Создание профиля репетитора для пользователя {Id}", userId);
+        var teacherProfile = new TeacherProfile
+        {
+            UserId = userId,
+            Education = Input.Education ?? string.Empty,
+            PreparationPrograms = Input.SelectedPrograms.ToArray(),
+            HourlyRate = Input.HourlyRate ?? 0,
+            ExperienceYears = Input.ExperienceYears ?? 0,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _unitOfWork.TeacherProfiles.AddAsync(teacherProfile);
+        await _unitOfWork.SaveChangesAsync();
+        _logger.LogInformation("Профиль репетитора успешно создан");
+
+        // Добавляем связи с предметами
+        foreach (var subjectId in Input.SelectedSubjects)
+        {
+            // Проверяем существование предмета
+            var subject = await _unitOfWork.Subjects.GetByIdAsync(subjectId);
+            if (subject == null)
+            {
+                _logger.LogWarning("Предмет с ID {SubjectId} не найден", subjectId);
+                continue;
+            }
+
+            var teacherSubject = new TeacherSubject
+            {
+                TeacherProfileId = teacherProfile.Id,
+                SubjectId = subjectId,
+            };
+            await _unitOfWork.TeacherSubjects.AddAsync(teacherSubject);
+            _logger.LogInformation("Добавлен предмет {SubjectId} для репетитора {TeacherId}", subjectId, teacherProfile.Id);
+        }
+        await _unitOfWork.SaveChangesAsync();
+        _logger.LogInformation("Связи с предметами успешно добавлены");
+    }
+    
+    private DateTime NormalizeDateTimeToUtc(DateTime dateTime)
+    {
+        return dateTime.Kind != DateTimeKind.Utc 
+            ? DateTime.SpecifyKind(dateTime.Date, DateTimeKind.Utc) 
+            : dateTime;
     }
 } 

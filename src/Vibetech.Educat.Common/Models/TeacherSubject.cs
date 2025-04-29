@@ -11,10 +11,6 @@ public class TeacherSubject : BaseEntity
     [Required]
     public int SubjectId { get; set; }
 
-    [Required]
-    [Column(TypeName = "decimal(10,2)")]
-    public decimal PricePerHour { get; set; }
-
     // Навигационные свойства
     public virtual TeacherProfile TeacherProfile { get; set; } = null!;
     public virtual Subject Subject { get; set; } = null!;
