@@ -41,18 +41,14 @@
 
                         <div class="mb-3">
                             <label class="form-label">Минимальная цена</label>
-                            <input asp-for="Input.MinPrice" type="number" class="form-control @(ModelState.ContainsKey("Input.MinPrice") ? "is-invalid" : "")" min="0" />
-                            <div class="invalid-feedback" id="minPriceError">
-                                @(ModelState.ContainsKey("Input.MinPrice") ? ModelState["Input.MinPrice"].Errors.FirstOrDefault()?.ErrorMessage : "")
-                            </div>
+                            <input asp-for="Input.MinPrice" type="number" class="form-control" min="0" />
+                            <div class="invalid-feedback" id="minPriceError"></div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Максимальная цена</label>
-                            <input asp-for="Input.MaxPrice" type="number" class="form-control @(ModelState.ContainsKey("Input.MaxPrice") ? "is-invalid" : "")" min="0" />
-                            <div class="invalid-feedback" id="maxPriceError">
-                                @(ModelState.ContainsKey("Input.MaxPrice") ? ModelState["Input.MaxPrice"].Errors.FirstOrDefault()?.ErrorMessage : "")
-                            </div>
+                            <input asp-for="Input.MaxPrice" type="number" class="form-control" min="0" />
+                            <div class="invalid-feedback" id="maxPriceError"></div>
                         </div>
 
                         <div class="mb-3">

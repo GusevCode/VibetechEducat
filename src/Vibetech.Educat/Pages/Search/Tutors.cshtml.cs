@@ -84,15 +84,17 @@ public sealed class TutorsModel : PageModel
         // Валидация цен: если минимальная цена больше максимальной, сбрасываем фильтры цены
         if (Input.MinPrice.HasValue && Input.MaxPrice.HasValue && Input.MinPrice > Input.MaxPrice)
         {
-            ModelState.AddModelError("Input.MinPrice", "Минимальная цена должна быть меньше максимальной");
-            ModelState.AddModelError("Input.MaxPrice", "Максимальная цена должна быть больше минимальной");
-            // Сбрасываем некорректные значения
+            // Создаем временный объект только с валидными полями
             var tempInput = new SearchInputModel
             {
                 Subject = Input.Subject,
                 MinExperience = Input.MinExperience
             };
             Input = tempInput;
+            
+            // Очищаем ошибки ModelState для этих полей, чтобы избежать красной подсветки полей
+            ModelState.Remove("Input.MinPrice");
+            ModelState.Remove("Input.MaxPrice");
         }
 
         // Получаем доступные предметы
